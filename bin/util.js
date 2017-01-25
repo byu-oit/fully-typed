@@ -56,6 +56,11 @@ exports.errors = {
         explanation: 'The type of the value does not match that specified by the configuration.',
         summary: 'Invalid type.'
     },
+    multi: {
+        code: 'ETMUL',
+        explanation: 'Multiple schemas tested the value for errors and none passed.',
+        summary: 'Invalid value.'
+    }
 };
 
 exports.errish = function(message, meta) {
