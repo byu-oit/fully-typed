@@ -30,6 +30,8 @@ console.log(positiveIntegerSchema.normalize(undefined));     // value === 100
 console.log(positiveIntegerSchema.error(0));         // null - no error
 console.log(positiveIntegerSchema.error(1));         // null - no error
 
+console.log(positiveIntegerSchema.error(-1));
+
 console.log(positiveIntegerSchema.error(-1).message);   // Invalid number. Must be greater than or equal to 0. Received: -1
 console.log(positiveIntegerSchema.error(1.2).message);  // Invalid number. Must be an integer. Received: 1.2
 console.log(positiveIntegerSchema.error('1').message);  // Invalid value. Expected a number. Received: "1"
