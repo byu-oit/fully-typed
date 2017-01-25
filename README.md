@@ -289,7 +289,7 @@ Type Aliases: `'object'`, `Object`
 
 In addition to the [shared configuration options](#shared-configuration-options) it also has these options:
 
-- *allowNull* - (Boolean) Whether `null` is an acceptable value. Defaults to `false`.
+- *allowNull* - (Boolean) Whether `null` is an acceptable value. Defaults to `true`.
 
     ```js
     const nullSchema = Typed({
@@ -307,7 +307,7 @@ In addition to the [shared configuration options](#shared-configuration-options)
     notNullSchema.error(null);  // error
     ```
 
-- *clean* - (Boolean) During [normalization](#) remove any properties that are not defined in the schema's properties. Defaults to `true`.
+- *clean* - (Boolean) During [normalization](#) remove any properties that are not defined in the schema's properties. Defaults to `false`.
 
     ```js
     const schema = Typed({
@@ -356,9 +356,6 @@ In addition to the [shared configuration options](#shared-configuration-options)
     schema.error({ name: 'Bob' });  // no errors
     schema.error({});               // error
     ```
-
-    TODO: make sure object is normalizing
-    TODO: add erase unknown properties option
 
 ## One-Of
 

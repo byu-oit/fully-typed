@@ -29,7 +29,7 @@ module.exports = TypedObject;
 function TypedObject (config) {
     const object = this;
     const Schema = this.Schema;
-    const allowNull = config.hasOwnProperty('allowNull') ? !!config.allowNull : false;
+    const allowNull = config.hasOwnProperty('allowNull') ? !!config.allowNull : true;
     const hasProperties = config.hasOwnProperty('properties');
 
     if (hasProperties && !util.isPlainObject(config.properties)) {

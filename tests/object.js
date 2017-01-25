@@ -47,14 +47,14 @@ describe('TypedObject', () => {
 
     describe('allow null', () => {
 
-        it('defaults to false', () => {
+        it('defaults to true', () => {
             const o = Schema({ type: Object });
-            expect(o.allowNull).to.be.false;
+            expect(o.allowNull).to.be.true;
         });
 
-        it('can be set to true', () => {
-            const o = Schema({ type: Object, allowNull: true });
-            expect(o.allowNull).to.be.true;
+        it('can be set to false', () => {
+            const o = Schema({ type: Object, allowNull: false });
+            expect(o.allowNull).to.be.false;
         });
 
     });
@@ -108,7 +108,7 @@ describe('TypedObject', () => {
         });
 
         it('do not allow null', () => {
-            const o = Schema({ type: Object });
+            const o = Schema({ type: Object, allowNull: false });
             const err = o.error(null);
             expect(err.code).to.equal(TypedObject.errors.null.code);
         });
