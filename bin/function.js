@@ -49,7 +49,7 @@ function TypedFunction (config) {
             /**
              * @property
              * @name TypedString#maxArguments
-             * @type {boolean}
+             * @type {number}
              */
             value: config.maxArguments,
             writable: false
@@ -59,9 +59,9 @@ function TypedFunction (config) {
             /**
              * @property
              * @name TypedString#minArguments
-             * @type {boolean}
+             * @type {number}
              */
-            value: config.minArguments,
+            value: min,
             writable: false
         },
 
