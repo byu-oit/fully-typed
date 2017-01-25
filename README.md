@@ -359,6 +359,69 @@ In addition to the [shared configuration options](#shared-configuration-options)
 
 ## One-Of
 
+It is possible to allow multiple variations of schemas. For example, you may want to allow numbers and strings.
+
+Any place where you can define a schema configuration object you can define multiple variations by passing an array of schema configurations.
+
+```js
+const schema = Typed([
+    {
+        type: Number,
+        min: 0
+    },
+    {
+        type: String
+    }
+]);
+
+schema.error('Foo');    // no errors
+schema.error(1);        // no errors
+schema.error(-1);       // error
+schema.error(true);     // error
+```
+
 ## String
+
+A string type will require the input to be a string.
+
+Type Aliases: `'string'`, `String`
+
+In addition to the [shared configuration options](#shared-configuration-options) it also has these options:
+
+- *maxLength* - (Number) The maximum length to allow for the string. Defaults to `undefined`.
+
+    ```js
+    const schema = Typed({
+        type: String,
+        maxLength: 3
+    });
+
+    schema.error('foo');     // no errors
+    schema.error('food');    // error
+    ```
+
+- *minLength* - (Number) The minimum length to allow for the string. Defaults to `0`.
+
+    ```js
+    const schema = Typed({
+        type: String,
+        minLength: 1
+    });
+
+    schema.error('a');     // no errors
+    schema.error('');      // error
+    ```
+
+- *pattern* - (RegExp) A regular expression object to test against the string. Defaults to `undefined`.
+
+    ```js
+    const schema = Typed({
+        type: String,
+        pattern: /^[a-z]$/i
+    });
+
+    schema.error('a');     // no errors
+    schema.error('1');     // error
+    ```
 
 ## Symbol
