@@ -56,6 +56,10 @@ TypedBoolean.prototype.error = function (value, prefix) {
     return null;
 };
 
+TypedBoolean.prototype.normalize = function (value) {
+    return !!value;
+};
+
 TypedBoolean.errors = {
 
 };
