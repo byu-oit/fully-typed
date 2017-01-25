@@ -102,11 +102,15 @@ All types defined in this library share the following common configuration optio
 
 ## Array
 
-An array type will require the input to be an array. In addition to the [shared configuration options](#shared-configuration-options) it also has these options:
+An array type will require the input to be an array.
 
-- *minItems* - (Number) The minimum number of items that the array must contain.
+Type Aliases: `'array'`, `Array`
 
-- *maxItems* - (Number) The maximum number of items that the array can contain.
+In addition to the [shared configuration options](#shared-configuration-options) it also has these options:
+
+- *maxItems* - (Number) The maximum number of items that the array can contain. Defaults to `undefined`.
+
+- *minItems* - (Number) The minimum number of items that the array must contain. Defaults to `0`.
 
 - *schema* - (Object) A configuration schema to apply to each item in the array. For example, you can specify that the array must be an array of numbers.
 
@@ -120,7 +124,7 @@ An array type will require the input to be an array. In addition to the [shared 
     });
     ```
 
-- *uniqueItems* - (Boolean) If set to true then each item in the array must be unique.
+- *uniqueItems* - (Boolean) If set to true then each item in the array must be unique. Defaults to `false`.
 
     ```js
     const schema = Typed({
@@ -134,11 +138,181 @@ An array type will require the input to be an array. In addition to the [shared 
 
 ## Boolean
 
+An boolean type will accept any value and transform it into a boolean unless the `strict` option is set. Under `strict` this type will only accept a boolean.
+
+Type Aliases: `'boolean'`, `Boolean`
+
+In addition to the [shared configuration options](#shared-configuration-options) it also has this option:
+
+- *strict* - (Boolean) Set to true to require that the type be a boolean. Defaults to `false`.
+
+    ```js
+    const loose = Typed({
+        type: Boolean
+    });
+
+    const strict = Typed({
+        type: Boolean,
+        strict: true
+    });
+
+    loose.error(1);         // no errors
+    strict.error(1);        // error
+    strict.error(true);     // no errors
+
+    const value = loose.normalize(1);   // value === true
+    ```
+
 ## Function
+
+An function type will require the input to be a function.
+
+Type Aliases: `'function'`, `Function`
+
+In addition to the [shared configuration options](#shared-configuration-options) it also has these options:
+
+- *maxArguments* - (Number) The maximum number of arguments that the function can define as parameters. Defaults to `undefined`.
+
+    ```js
+    const schema = Typed({
+        type: Function,
+        maxArguments: 0
+    });
+
+    schema.error(function() {});    // no errors
+    schema.error(function(a) {});   // error
+    ```
+
+- *minArguments* - (Number) The minimum number of arguments that the function can define as parameters. Defaults to `0`.
+
+    ```js
+    const schema = Typed({
+        type: Function,
+        minArguments: 3
+    });
+
+    schema.error(function(a, b,  c) {});    // no errors
+    schema.error(function() {});            // error
+    ```
+
+- *named* - (Boolean) Require the function to be named. Defaults to `false`.
+
+    ```js
+    const schema = Typed({
+        type: Function,
+        named: true
+    });
+
+    schema.error(function foo() {});    // no errors
+    schema.error(function() {});        // error
+    ```
 
 ## Number
 
+An number type will require the input to be a number.
+
+Type Aliases: `'number'`, `Number`
+
+In addition to the [shared configuration options](#shared-configuration-options) it also has these options:
+
+- *exclusiveMax* - (Boolean) Whether the maximum value should be included as allowed or not. Defaults to `false`.
+
+    ```js
+    const schema = Typed({
+        type: Number,
+        exclusiveMax: true,
+        max: 1
+    });
+
+    schema.error(.999);     // no errors
+    schema.error(1);        // error
+    ```
+
+- *exclusiveMin* - (Boolean) Whether the minimum value should be included as allowed or not. Defaults to `false`.
+
+    ```js
+    const schema = Typed({
+        type: Number,
+        exclusiveMin: true,
+        min: 1
+    });
+
+    schema.error(1.001);    // no errors
+    schema.error(1);        // error
+    ```
+
+- *integer* - (Boolean) Whether the value must be an integer. Defaults to `false`.
+
+    ```js
+    const schema = Typed({
+        type: Number,
+        integer: true
+    });
+
+    schema.error(1);        // no errors
+    schema.error(1.2);      // error
+    ```
+
+- *max* - (Number) The maximum allow value. Defaults to `undefined`.
+
+    ```js
+    const schema = Typed({
+        type: Number,
+        max: 1
+    });
+
+    schema.error(-1);       // no errors
+    schema.error(1);        // no errors
+    schema.error(2);        // error
+    ```
+
+- *min* - (Number) The minimum allow value. Defaults to `undefined`.
+
+    ```js
+    const schema = Typed({
+        type: Number,
+        max: 1
+    });
+
+    schema.error(-1);       // no errors
+    schema.error(1);        // no errors
+    schema.error(2);        // error
+    ```
+
 ## Object
+
+An object type will require the input to be an object. You can also specify which properties are required and the schema expected for individual properties.
+
+Type Aliases: `'object'`, `Object`
+
+In addition to the [shared configuration options](#shared-configuration-options) it also has these options:
+
+- *allowNull* - (Boolean) Whether `null` is an acceptable value. Defaults to `false`.
+
+    ```js
+    const nullSchema = Typed({
+        type: Object,
+        allowNull: true
+    });
+
+    const notNullSchema = Typed({
+        type: Object
+    });
+
+    nullSchema.error({});       // no errors
+    nullSchema.error(null);     // no errors
+    notNullSchema.error({});    // no errors
+    notNullSchema.error(null);  // error
+    ```
+
+- *properties* - (Object) Define the properties that can be part of this object. Each property takes a full schema configuration. Each property is also given a `required` property that can be set to true.
+
+    ```js
+
+    ```
+
+    TODO: make sure object is normalizing
+    TODO: add erase unknown properties option
 
 ## One-Of
 
