@@ -123,4 +123,42 @@ describe('TypedArray', () => {
 
     });
 
+    describe('#normalize', () => {
+        let schema;
+        let value;
+
+        before(() => {
+            // accepts number but rounds numbers greater than or equal to 10.1
+            schema = Schema({
+                type: Array,
+                schema: [
+                    {
+                        type: Number,
+                        min: 10.1,
+                        transform: v => Math.round(v)
+                    },
+                    {
+                        type: Number,
+                        max: 10.1,
+                        exclusiveMax: true
+                    }
+                ]
+            });
+            value = schema.normalize([ 7.5, 10.1, 15.5 ]);
+        });
+
+        it('7.5 => 7.5', () => {
+            expect(value[0]).to.equal(7.5);
+        });
+
+        it('10.1 => 10', () => {
+            expect(value[1]).to.equal(10);
+        });
+
+        it('15.5 => 16', () => {
+            expect(value[2]).to.equal(16);
+        });
+
+    });
+
 });

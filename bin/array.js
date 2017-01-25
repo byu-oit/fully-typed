@@ -150,6 +150,11 @@ TypedArray.prototype.error = function(value, prefix) {
     return null;
 };
 
+TypedArray.prototype.normalize = function(value) {
+    const schema = this.schema;
+    return value.map(v => schema.normalize(v));
+};
+
 TypedArray.errors = {
     items: {
         code: 'EAITM',
