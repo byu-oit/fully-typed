@@ -283,6 +283,8 @@ In addition to the [shared configuration options](#shared-configuration-options)
 
 An object type will require the input to be an object. You can also specify which properties are required and the schema expected for individual properties.
 
+Normalization of this type produces a new object.
+
 Type Aliases: `'object'`, `Object`
 
 In addition to the [shared configuration options](#shared-configuration-options) it also has these options:
@@ -305,10 +307,54 @@ In addition to the [shared configuration options](#shared-configuration-options)
     notNullSchema.error(null);  // error
     ```
 
+- *clean* - (Boolean) During [normalization](#) remove any properties that are not defined in the schema's properties. Defaults to `true`.
+
+    ```js
+    const schema = Typed({
+        type: Object,
+        clean: true,
+        properties: {
+            name: {
+                type: String,
+                minLength: 1,
+                required: true      // name is required, age is optional
+            },
+            age: {
+                type: Number,
+                min: 0,
+                integer: true
+            }
+        }
+    });
+
+    const value = schema.normalize({    // value === { name: 'Bob', age: 5 }
+        name: 'Bob',
+        age: 5,
+        location: 'Utah'
+    });
+    ```
+
 - *properties* - (Object) Define the properties that can be part of this object. Each property takes a full schema configuration. Each property is also given a `required` property that can be set to true.
 
     ```js
+    const schema = Typed({
+        type: Object,
+        properties: {
+            name: {
+                type: String,
+                minLength: 1,
+                required: true      // name is required, age is optional
+            },
+            age: {
+                type: Number,
+                min: 0,
+                integer: true
+            }
+        }
+    });
 
+    schema.error({ name: 'Bob' });  // no errors
+    schema.error({});               // error
     ```
 
     TODO: make sure object is normalizing

@@ -137,4 +137,35 @@ describe('TypedObject', () => {
 
     });
 
+    describe('#normalize', () => {
+
+        it('can clean properties', () => {
+            const o = Schema({ type: Object, clean: true, properties: { x: {}} });
+            const v = o.normalize({ x: 5, y: 10 });
+            expect(v.x).to.equal(5);
+            expect(v.y).to.be.undefined;
+        });
+
+        it('can keep all properties', () => {
+            const o = Schema({ type: Object, clean: false, properties: { x: {}} });
+            const v = o.normalize({ x: 5, y: 10 });
+            expect(v.x).to.equal(5);
+            expect(v.y).to.equal(10);
+        });
+
+        it('normalizes properties', () => {
+            const o = Schema({
+                type: Object,
+                properties: {
+                    x: {
+                        default: 'foo'
+                    }
+                }
+            });
+            const v = o.normalize({});
+            expect(v.x).to.equal('foo');
+        });
+
+    });
+
 });

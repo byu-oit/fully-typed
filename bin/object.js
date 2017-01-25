@@ -44,9 +44,19 @@ function TypedObject (config) {
             /**
              * @property
              * @name TypedObject#allowNull
-             * @type {function,*}
+             * @type {boolean}
              */
             value: allowNull,
+            writable: false
+        },
+
+        clean: {
+            /**
+             * @property
+             * @name TypedObject#clean
+             * @type {boolean}
+             */
+            value: !!config.clean,
             writable: false
         },
 
@@ -54,7 +64,7 @@ function TypedObject (config) {
             /**
              * @property
              * @name TypedObject#properties
-             * @type {function,*}
+             * @type {object}
              */
             value: hasProperties ? config.properties : {},
             writable: false
@@ -143,6 +153,29 @@ TypedObject.prototype.error = function(value, prefix) {
     }
 
     return null;
+};
+
+TypedObject.prototype.normalize = function(value) {
+    const result = {};
+    const object = this;
+
+    Object.keys(object.properties)
+        .forEach(function(key) {
+            const item = object.properties[key];
+            if (item.hasDefault && !value.hasOwnProperty(key)) value[key] = item.default;
+        });
+
+    Object.keys(value)
+        .forEach(function(key) {
+            if (object.properties.hasOwnProperty(key)) {
+                const schema = object.properties[key];
+                result[key] = schema.normalize(value[key]);
+            } else if (!object.clean) {
+                result[key] = value[key];
+            }
+        });
+
+    return result;
 };
 
 TypedObject.errors = {
