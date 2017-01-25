@@ -1,0 +1,25 @@
+{
+  "name": "fully-typed",
+  "version": "0.0.1",
+  "description": "Run time type validation, transformation, and error generator that works out of the box on primitives, objects, arrays, and nested objects. Also extensible for custom types.",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "coverage": "nyc mocha tests",
+    "test": "mocha tests"
+  },
+  "keywords": [
+    "typed",
+    "type",
+    "typescript"
+  ],
+  "author": "James Speirs <james.speirs@gmail.com>",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "mocha": "^3.2.0",
+    "nyc": "^10.0.0"
+  }
+}
