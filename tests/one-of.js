@@ -19,7 +19,7 @@ const expect            = require('chai').expect;
 const Schema            = require('../index');
 const util              = require('../bin/util');
 
-describe.only('one of schemas', () => {
+describe('one of schemas', () => {
 
     describe('string or number', () => {
         let schema;
