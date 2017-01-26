@@ -60,4 +60,31 @@ describe('controllers', () => {
         expect(items.length).to.equal(2);
     });
 
+    it('has checks existence', () => {
+        expect(ctrl.has('foo')).to.be.false;
+        ctrl.define(['foo'], noop);
+        expect(ctrl.has('foo')).to.be.true;
+    });
+
+    it('can delete', () => {
+        ctrl.define(['foo'], noop);
+        expect(() => ctrl.delete('foo')).not.to.throw(Error);
+        expect(ctrl.has('foo')).to.be.false;
+    });
+
+    it('cannot delete dependency', () => {
+        ctrl.define(['foo'], noop);
+        ctrl.define(['bar'], noop, ['foo']);
+        expect(() => ctrl.delete('foo')).to.throw(Error);
+    });
+
+    it('deleting a dependent removes dependency', () => {
+        ctrl.define(['foo'], noop);
+        ctrl.define(['bar'], noop, ['foo']);
+        expect(() => ctrl.delete('bar')).not.to.throw(Error);
+        expect(() => ctrl.delete('foo')).not.to.throw(Error);
+        expect(ctrl.has('bar')).to.be.false;
+        expect(ctrl.has('foo')).to.be.false;
+    });
+
 });

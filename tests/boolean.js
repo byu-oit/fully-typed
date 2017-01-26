@@ -49,4 +49,18 @@ describe('TypedBoolean', () => {
 
     });
 
+    describe('#normalize', () => {
+
+        it('converts falsy to false', () => {
+            const b = Schema({ type: Boolean });
+            expect(b.normalize(0)).to.be.false;
+        });
+
+        it('converts truthy to true', () => {
+            const b = Schema({ type: Boolean });
+            expect(b.normalize(1)).to.be.true;
+        });
+
+    });
+
 });

@@ -48,6 +48,16 @@ describe('one of schemas', () => {
             expect(err.code).to.equal(util.errors.multi.code);
         });
 
+        it('cannot be an object', () => {
+            const err = util.extractError(() => schema.validate({}) );
+            expect(err.code).to.equal(util.errors.multi.code);
+        });
+
+        it('normalize error', () => {
+            const err = util.extractError(() => schema.normalize({}) );
+            expect(err.code).to.equal(util.errors.multi.code);
+        });
+
     });
 
 });
