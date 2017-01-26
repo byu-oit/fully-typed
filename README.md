@@ -1,3 +1,6 @@
+[![npm module downloads](http://img.shields.io/npm/dt/fully-typed.svg)](https://www.npmjs.org/package/fully-typed)
+[![Build status](https://img.shields.io/travis/byu-oit-appdev/fully-typed.svg?style=flat)](https://travis-ci.org/byu-oit-appdev/fully-typed)
+
 # fully-typed
 
 Run time type validation, transformation, and error generator that works out of the box on primitives, objects, arrays, and nested objects. Also extensible for custom types.
