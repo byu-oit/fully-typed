@@ -42,8 +42,9 @@ function Schema (configuration) {
         normalize: function(value) {
             const data = getPassingSchema(schemas, value, '');
             if (data.passing) return data.schema.normalize(value);
-            const err = Error(data.errors.message);
-            util.throwWithMeta(err, data.errors);
+            const meta = getMultiError(data.errors, '');
+            const err = Error(meta.message);
+            util.throwWithMeta(err, meta);
         },
 
         validate: function(value, prefix) {
