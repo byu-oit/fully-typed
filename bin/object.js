@@ -91,11 +91,31 @@ function TypedObject (config) {
     // add typing to each property specified in the configuration
     Object.keys(object.properties)
         .forEach(function(key) {
-            const value = object.properties[key] || {};
+            let value = object.properties[key] || {};
+            const valueIsPlain = !Array.isArray(value);
 
             if (!util.isValidSchemaConfiguration(value)) {
                 const err = Error('Invalid configuration for property: ' + key + '. Must be a plain object.');
                 util.throwWithMeta(err, util.errors.config);
+            }
+
+            // merge generic schema with property specific schemas
+            if (config.schema) {
+                const schemaIsPlain = !Array.isArray(config.schema);
+                if (schemaIsPlain && valueIsPlain) {
+                    value = Object.assign({}, config.schema, value);
+                } else if (schemaIsPlain) {
+                    value = value.map(item => Object.assign({}, config.schema, item));
+                } else if (valueIsPlain) {
+                    value = config.schema.map(item => Object.assign({}, item, value));
+                } else {
+                    const array = [];
+                    for (let i = 0; i < value.length; i++) {
+                        for (let j = 0; j < config.schema.length; j++) {
+                            array.push(Object.assign({}, config.schema[j], value[i]));
+                        }
+                    }
+                }
             }
 
             const schema = Schema(value);
