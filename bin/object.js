@@ -101,13 +101,17 @@ function TypedObject (config) {
             }
 
             // merge generic schema with property specific schemas
+            let additionalProperties = {};
             if (config.schema) {
                 if (schemaIsPlain && valueIsPlain) {
                     value = Object.assign({}, config.schema, value);
+                    additionalProperties = { required: { value: !!value.required } };
                 } else if (schemaIsPlain) {
                     value = value.map(item => Object.assign({}, config.schema, item));
+                    additionalProperties = value.map(v => { return { required: { value: !!v.required } }});
                 } else if (valueIsPlain) {
                     value = config.schema.map(item => Object.assign({}, item, value));
+                    additionalProperties = value.map(v => { return { required: { value: !!v.required } }});
                 } else {
                     const array = [];
                     for (let i = 0; i < value.length; i++) {
@@ -116,16 +120,19 @@ function TypedObject (config) {
                         }
                     }
                     value = array;
+                    additionalProperties = value.map(v => { return { required: { value: !!v.required } }});
                 }
+            } else {
+                additionalProperties = { required: { value: !!value.required } };
             }
 
-            const schema = Schema(value);
+            const schema = Schema(value, additionalProperties);
             object.properties[key] = schema;
 
             if (Array.isArray(value)) {
-                value.forEach((v, i) => addToProperty(key, v, schema.schemas[i]))
+                schema.schemas.forEach((s, i) => validateSchemaConfiguration(key, s))
             } else {
-                addToProperty(key, value, schema);
+                validateSchemaConfiguration(key, schema);
             }
 
         });
@@ -222,26 +229,11 @@ TypedObject.errors = {
 
 
 
-function addToProperty (key, value, schema) {
+function validateSchemaConfiguration (key, schema) {
 
     // required
-    if (value.required && schema.hasDefault) {
+    if (schema.required && schema.hasDefault) {
         const err = Error('Invalid configuration for property: ' + key + '. Cannot make required and provide a default value.');
         util.throwWithMeta(err, util.errors.config);
     }
-
-    // add properties to the schema
-    Object.defineProperties(schema, {
-
-        required: {
-            /**
-             * @property
-             * @name Typed#required
-             * @type {boolean}
-             */
-            value: value ? !!value.required : false,
-            writable: false
-        }
-
-    });
 }
