@@ -32,8 +32,14 @@ function TypedObject (config) {
     const allowNull = config.hasOwnProperty('allowNull') ? !!config.allowNull : true;
     const hasProperties = config.hasOwnProperty('properties');
 
-    if (hasProperties && !util.isPlainObject(config.properties)) {
-        const message = util.propertyErrorMessage('properties', config.properties, 'Must be a plain object.');
+    if (hasProperties && !util.isValidSchemaConfiguration(config.properties)) {
+        const message = util.propertyErrorMessage('properties', config.properties, 'Must be a plain object or an array of plain objects.');
+        const err = Error(message);
+        util.throwWithMeta(err, util.errors.config);
+    }
+
+    if (config.schema && !util.isValidSchemaConfiguration(config.schema)) {
+        const message = util.propertyErrorMessage('schema', config.schema, 'Must be a plain object or an array of plain objects.');
         const err = Error(message);
         util.throwWithMeta(err, util.errors.config);
     }
