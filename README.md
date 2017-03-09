@@ -294,12 +294,12 @@ In addition to the [shared configuration options](#shared-configuration-options)
     ```js
     const schema = Typed({
         type: Number,
-        max: 1
+        min: 1
     });
 
-    schema.error(-1);       // no errors
+    schema.error(-1);       // error
     schema.error(1);        // no errors
-    schema.error(2);        // error
+    schema.error(2);        // no errors
     ```
 
 ### Object
@@ -374,6 +374,86 @@ In addition to the [shared configuration options](#shared-configuration-options)
                 integer: true
             }
         }
+    });
+
+    schema.error({ name: 'Bob' });  // no errors
+    schema.error({});               // error
+    ```
+
+- *schema* - (Object) A configuration schema to apply to each property on the object. This is useful for allowing objects to have any property but requiring that each property adhere to a schema. If specific properties are defined then the schema defined here will be extended by and superseded by the specific property's schema.
+
+    ```js
+    const schema = Typed({
+        type: Object,
+
+        // schema specifics for a single property extend the general schema
+        properties: {
+            name: {
+                // the type is inherited as String
+                minLength: 1,       // min length of 1 overwrites general min length of 10
+                required: true      // name is required
+            },
+            age: {
+                // because this property is of type Number the non-number properties
+                // in the general schema definition are ignored
+                type: Number
+            }
+        },
+
+        // a generic schema to apply to all properties within the object
+        schema: {
+            type: String,
+            minLength: 10
+        }
+    });
+
+    schema.error({ name: 'Bob' });  // no errors
+    schema.error({});               // error
+    ```
+
+    The following example shows a [one-of](#one-of) general schema definition. All variations of the general schema are possible extensions across the property specific schemas.
+
+    ```js
+    const schema = Typed({
+        type: Object,
+
+        // schema specifics for a single property extend the general schema
+        properties: {
+            name: {
+                type: String,       // because this is a string it will extend
+                                    // the String specific general schema
+                minLength: 1
+            },
+            age: {
+                // because this property is of type Number it extends one of the generic number schemas
+                type: Number
+            }
+            foo: {
+                // the type might be a String or Number
+                min: 5,             // this property will only apply if the type is a number and
+                                    // it will supersede the general min value
+                minLength: 1,       // this property will only apply if the type is a string
+                required: true      // name is required
+            }
+        },
+
+        // a generic schema to apply to all properties within the object
+        schema: [
+            {
+                type: String,
+                maxLength: 10
+            },
+            {
+                type: Number,
+                min: 0,
+                max: 10
+            },
+            {
+                type: Number,
+                min: 20,
+                max: 30
+            }
+        ]
     });
 
     schema.error({ name: 'Bob' });  // no errors
