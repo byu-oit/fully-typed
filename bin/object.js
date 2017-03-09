@@ -38,7 +38,7 @@ function TypedObject (config) {
         util.throwWithMeta(err, util.errors.config);
     }
 
-    if (config.schema && !util.isValidSchemaConfiguration(config.schema)) {
+    if (config.hasOwnProperty('schema') && !util.isValidSchemaConfiguration(config.schema)) {
         const message = util.propertyErrorMessage('schema', config.schema, 'Must be a plain object or an array of plain objects.');
         const err = Error(message);
         util.throwWithMeta(err, util.errors.config);
@@ -74,6 +74,16 @@ function TypedObject (config) {
              */
             value: hasProperties ? config.properties : {},
             writable: false
+        },
+
+        schema: {
+            /**
+             * @property
+             * @name TypedObject#properties
+             * @type {object}
+             */
+            value: config.schema,
+            writable: false
         }
 
     });
@@ -83,7 +93,7 @@ function TypedObject (config) {
         .forEach(function(key) {
             const value = object.properties[key] || {};
 
-            if (!util.isPlainObject(value)) {
+            if (!util.isValidSchemaConfiguration(value)) {
                 const err = Error('Invalid configuration for property: ' + key + '. Must be a plain object.');
                 util.throwWithMeta(err, util.errors.config);
             }
