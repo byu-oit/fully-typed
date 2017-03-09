@@ -93,6 +93,7 @@ function TypedObject (config) {
         .forEach(function(key) {
             let value = object.properties[key] || {};
             const valueIsPlain = !Array.isArray(value);
+            const schemaIsPlain = !Array.isArray(config.schema);
 
             if (!util.isValidSchemaConfiguration(value)) {
                 const err = Error('Invalid configuration for property: ' + key + '. Must be a plain object.');
@@ -101,7 +102,6 @@ function TypedObject (config) {
 
             // merge generic schema with property specific schemas
             if (config.schema) {
-                const schemaIsPlain = !Array.isArray(config.schema);
                 if (schemaIsPlain && valueIsPlain) {
                     value = Object.assign({}, config.schema, value);
                 } else if (schemaIsPlain) {
@@ -115,32 +115,19 @@ function TypedObject (config) {
                             array.push(Object.assign({}, config.schema[j], value[i]));
                         }
                     }
+                    value = array;
                 }
             }
 
             const schema = Schema(value);
             object.properties[key] = schema;
 
-            // required
-            if (value.required && schema.hasDefault) {
-                const err = Error('Invalid configuration for property: ' + key + '. Cannot make required and provide a default value.');
-                util.throwWithMeta(err, util.errors.config);
+            if (Array.isArray(value)) {
+                value.forEach((v, i) => addToProperty(key, v, schema.schemas[i]))
+            } else {
+                addToProperty(key, value, schema);
             }
 
-            // add properties to the schema
-            Object.defineProperties(schema, {
-
-                required: {
-                    /**
-                     * @property
-                     * @name Typed#required
-                     * @type {boolean}
-                     */
-                    value: value ? !!value.required : false,
-                    writable: false
-                }
-
-            });
         });
 
     return object;
@@ -231,3 +218,30 @@ TypedObject.errors = {
         summary: 'Missing required property value.'
     }
 };
+
+
+
+
+function addToProperty (key, value, schema) {
+
+    // required
+    if (value.required && schema.hasDefault) {
+        const err = Error('Invalid configuration for property: ' + key + '. Cannot make required and provide a default value.');
+        util.throwWithMeta(err, util.errors.config);
+    }
+
+    // add properties to the schema
+    Object.defineProperties(schema, {
+
+        required: {
+            /**
+             * @property
+             * @name Typed#required
+             * @type {boolean}
+             */
+            value: value ? !!value.required : false,
+            writable: false
+        }
+
+    });
+}
