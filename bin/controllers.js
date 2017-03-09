@@ -15,6 +15,7 @@
  *    limitations under the License.
  **/
 'use strict';
+const crypto            = require('crypto');
 const util              = require('./util');
 
 module.exports = Controllers;
@@ -28,6 +29,7 @@ function Controllers() {
     const factory = Object.create(Controllers.prototype);
     const store = new Map();
     const dependencies = new Map();
+    const instances = new WeakMap();
 
     /**
      * Define a controller that manages schemas.
@@ -53,6 +55,7 @@ function Controllers() {
         const ctrls = [];
         const errorFunctions = [];
         const normalizeFunctions = [];
+        const firstStringAlias = aliases.filter(a => typeof a === 'string')[0];
 
         // verify that inherits exist already and build inheritance arrays
         inherits.forEach(function(inherit) {
@@ -71,6 +74,25 @@ function Controllers() {
             const length = ctrls.length;
             this.Schema = schema;
             for (let i = 0; i < length; i++) ctrls[i].call(this, config);
+            const protect = {};
+
+            // create a hash
+            const options = getNormalizedSchemaConfiguration(this);
+            protect.hash = crypto
+                .createHash('sha256')
+                .update(Object.keys(options)
+                    .map(key => {
+                        const value = options[key];
+                        if (typeof value === 'function') return value.toString();
+                        if (typeof value === 'object') return JSON.stringify(value);
+                        return value;
+                    })
+                    .join('')
+                )
+                .digest('hex');
+
+            // store the protected data
+            instances.set(this, protect);
         }
 
         Schema.prototype.error = function(value, prefix) {
@@ -83,6 +105,10 @@ function Controllers() {
             return null;
         };
 
+        Schema.prototype.hash = function() {
+            return instances.has(this) ? instances.get(this).hash : ''
+        };
+
         Schema.prototype.normalize = function(value) {
             if (typeof value === 'undefined' && this.hasDefault) value = this.default;
             this.validate(value);
@@ -91,6 +117,12 @@ function Controllers() {
                 value = normalizeFunctions[i].call(this, value);
             }
             return value;
+        };
+
+        Schema.prototype.toJSON = function() {
+            const options = getNormalizedSchemaConfiguration(this);
+            if (typeof options.type === 'function') options.type = options.type.name || firstStringAlias || 'anonymous';
+            return options;
         };
 
         Schema.prototype.validate = function(value, prefix) {
@@ -200,4 +232,13 @@ function Controllers() {
     };
 
     return factory;
+}
+
+function getNormalizedSchemaConfiguration(obj) {
+    return Object.getOwnPropertyNames(obj)
+        .filter(k => k !== 'Schema')
+        .reduce((prev, key) => {
+            prev[key] = obj[key];
+            return prev;
+        }, {});
 }
