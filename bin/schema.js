@@ -65,6 +65,10 @@ function Schema (configuration) {
         util.throwWithMeta(err, meta);
     };
 
+    Object.defineProperty(result, 'schemas', {
+        get: () => schemas.slice(0)
+    });
+
     result.toJSON = function() {
         return schemas.map(schema => schema.toJSON());
     };
