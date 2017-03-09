@@ -25,8 +25,25 @@ describe('TypedObject', () => {
 
     describe('properties', () => {
 
-        it('properties must be plain object', () => {
-            const e = util.extractError(() => Schema({ type: Object, properties: null }));
+        it('properties cannot be null', () => {
+            const properties = null;
+            const e = util.extractError(() => Schema({ type: Object, properties: properties }));
+            expect(e.code).to.equal(util.errors.config.code);
+        });
+
+        it('properties can be a plain object', () => {
+            const properties = {};
+            expect(() => Schema({ type: Object, properties: properties })).not.to.throw(Error);
+        });
+
+        it('properties can be an array of plain objects', () => {
+            const properties = [{}];
+            expect(() => Schema({ type: Object, properties: properties })).not.to.throw(Error);
+        });
+
+        it('properties cannot be an array with a non plain objects', () => {
+            const properties = [null];
+            const e = util.extractError(() => Schema({ type: Object, properties: properties }));
             expect(e.code).to.equal(util.errors.config.code);
         });
 
@@ -99,6 +116,239 @@ describe('TypedObject', () => {
 
     });
 
+    describe('general schema', () => {
+
+        it('can have schema property', () => {
+            const o = Schema({ type: Object, schema: { type: String } });
+            expect(o).to.have.ownProperty('schema');
+        });
+
+        it('cannot be a null object', () => {
+            const config = { type: Object, schema: null };
+            expect(() => Schema(config)).to.throw(Error);
+        });
+
+        it('can be a non null object', () => {
+            const config = { type: Object, schema: { type: String } };
+            expect(() => Schema(config)).to.not.throw(Error);
+        });
+
+        it('can be an array of objects', () => {
+            const config = { type: Object, schema: [{ type: String }, { type: Number }] };
+            expect(() => Schema(config)).to.not.throw(Error);
+        });
+
+        describe('extends across properties', () => {
+            let o;
+
+            describe('plain specific and plain general', () => {
+
+                before(() => {
+                    o = Schema({
+                        type: Object,
+                        properties: {
+                            a: {
+                                type: String
+                            },
+                            b: {
+                                type: Number
+                            },
+                            c: {
+                                required: false
+                            }
+                        },
+                        schema: {
+                            type: Boolean,
+                            minLength: 10,
+                            min: 10,
+                            required: true
+                        }
+                    });
+                });
+
+                it('a', () => {
+                    expect(o.properties.a.type).to.equal(String);
+                    expect(o.properties.a.minLength).to.equal(10);
+                    expect(o.properties.a).not.to.have.ownProperty('min');
+                    expect(o.properties.a.required).to.be.true;
+                });
+
+                it('b', () => {
+                    expect(o.properties.b.type).to.equal(Number);
+                    expect(o.properties.b.min).to.equal(10);
+                    expect(o.properties.b).not.to.have.ownProperty('minLength');
+                    expect(o.properties.b.required).to.be.true;
+                });
+
+                it('c', () => {
+                    expect(o.properties.c.type).to.equal(Boolean);
+                    expect(o.properties.c).not.to.have.ownProperty('min');
+                    expect(o.properties.c).not.to.have.ownProperty('minLength');
+                    expect(o.properties.c.required).to.be.false;
+                });
+
+            });
+
+            describe('plain specific and array general', () => {
+                let o;
+
+                before(() => {
+                    o = Schema({
+                        type: Object,
+                        properties: {
+                            a: {
+                                type: String
+                            },
+                            b: {
+                                type: Number
+                            },
+                            c: {
+                                required: false
+                            }
+                        },
+                        schema: [{
+                            type: Boolean,
+                            required: true
+                        }]
+                    });
+                });
+
+                it('a', () => {
+                    expect(o.properties.a.schemas[0].type).to.equal(String);
+                    expect(o.properties.a.schemas[0].required).to.be.true;
+                    expect(o.properties.a.schemas.length).to.equal(1);
+                });
+
+                it('b', () => {
+                    expect(o.properties.b.schemas[0].type).to.equal(Number);
+                    expect(o.properties.b.schemas[0].required).to.be.true;
+                    expect(o.properties.b.schemas.length).to.equal(1);
+                });
+
+                it('c', () => {
+                    expect(o.properties.c.schemas[0].type).to.equal(Boolean);
+                    expect(o.properties.c.schemas[0].required).to.be.false;
+                    expect(o.properties.c.schemas.length).to.equal(1);
+                });
+
+            });
+
+            describe('array specific and plain general', () => {
+                let o;
+
+                before(() => {
+                    o = Schema({
+                        type: Object,
+                        properties: {
+                            a: [
+                                {
+                                    type: String
+                                },
+                                {
+                                    type: Number,
+                                    required: false
+                                }
+                            ]
+                        },
+                        schema: {
+                            type: Boolean,
+                            required: true
+                        }
+                    });
+                });
+
+                it('has 2 distinct configurations', () => {
+                    expect(o.properties.a.schemas.length).to.equal(2);
+                });
+
+                it('a[0]', () => {
+                    expect(o.properties.a.schemas[0].type).to.equal(String);
+                    expect(o.properties.a.schemas[0].required).to.be.true;
+                });
+
+                it('a[1]', () => {
+                    expect(o.properties.a.schemas[1].type).to.equal(Number);
+                    expect(o.properties.a.schemas[1].required).to.be.false;
+                });
+
+            });
+
+            describe('array specific and array general', () => {
+                let o;
+
+                before(() => {
+                    o = Schema({
+                        type: Object,
+                        properties: {
+                            a: [
+                                {
+                                    type: String
+                                },
+                                {
+                                    type: Number
+                                }
+                            ]
+                        },
+                        schema: [
+                            {
+                                type: String,
+                                required: true
+                            },
+                            {
+                                type: Number
+                            },
+                            {
+                                min: 0
+                            }
+                        ]
+                    });
+                });
+
+
+                // some combinations create the same configuration, there are 5 distinct configurations here
+                it('has 5 distinct configurations', () => {
+                    expect(o.properties.a.schemas.length).to.equal(5);
+                });
+
+                it('a[0]', () => {
+                    const s = o.properties.a.schemas[0];
+                    expect(s.type).to.equal(String);
+                    expect(s.required).to.be.true;
+                });
+
+                it('a[1]', () => {
+                    const s = o.properties.a.schemas[1];
+                    expect(s.type).to.equal(String);
+                    expect(s.required).to.be.false;
+                });
+
+                it('a[2]', () => {
+                    const s = o.properties.a.schemas[2];
+                    expect(s.type).to.equal(Number);
+                    expect(s.required).to.be.true;
+                    expect(s.min).to.be.NaN;
+                });
+
+                it('a[3]', () => {
+                    const s = o.properties.a.schemas[3];
+                    expect(s.type).to.equal(Number);
+                    expect(s.required).to.be.false;
+                    expect(s.min).to.be.NaN;
+                });
+
+                it('a[4]', () => {
+                    const s = o.properties.a.schemas[4];
+                    expect(s.type).to.equal(Number);
+                    expect(s.required).to.be.false;
+                    expect(s.min).to.equal(0);
+                });
+
+            });
+
+        });
+
+    });
+
     describe('#error', () => {
 
         it('checks type', () => {
@@ -134,6 +384,62 @@ describe('TypedObject', () => {
             expect(err.errors[0].code).to.equal(Typed.errors.type.code);
             expect(err.errors[0].property).to.equal('x');
         });
+
+        it('checks for array of schemas', () => {
+            const o = Schema({ type: Object, properties: { x: [{ type: Number }, {type: String}] } });
+            expect(o.error({ x: 'hello' })).to.be.null;
+            expect(o.error({ x: 123 })).to.be.null;
+            expect(o.error({ x: true })).not.to.be.null;
+        });
+
+        // TODO: validate non-specified parameters against general schema
+        /*describe('schema', () => {
+
+            describe('extends across properties', () => {
+                let o;
+
+                before(() => {
+                    o = Schema({
+                        type: Object,
+                        properties: {
+                            a: {
+                                type: String
+                            },
+                            b: {
+                                type: Number
+                            }
+                        },
+                        schema: {
+
+                        }
+                    });
+                });
+
+            });
+
+        });*/
+
+
+
+        /*before(() => {
+            o = Schema({
+                type: Object,
+                properties: {
+                    a: [
+                        {
+                            type: String
+                        },
+                        {
+                            type: Number
+                        }
+                    ]
+                },
+                schema: {
+                    type: Boolean,
+                    required: true
+                }
+            });
+        });*/
 
     });
 
