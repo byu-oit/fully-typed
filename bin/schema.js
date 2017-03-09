@@ -15,6 +15,7 @@
  *    limitations under the License.
  **/
 'use strict';
+const crypto            = require('crypto');
 const util              = require('./util');
 
 module.exports = Schema;
@@ -31,30 +32,52 @@ function Schema (configuration) {
     if (!Array.isArray(configuration)) return createSchema(configuration);
 
     // multiple configuration tries all schemas
-    const schemas = configuration.map(createSchema);
+    const hashes = {};
+    const schemas = configuration.map(createSchema)
+        .filter(schema => {
+            const hash = schema.hash();
+            if (hashes[hash]) return false;
+            hashes[hash] = true;
+            return true;
+        });
 
-    return {
-        error: function(value, prefix) {
-            const data = getPassingSchema(schemas, value);
-            return data.passing ? null : getMultiError(data.errors, prefix);
-        },
+    // generate the hash
+    const hash = crypto.createHash('sha256')
+        .update(schemas.map(schema => schema.hash).join(''))
+        .digest('hex');
 
-        normalize: function(value) {
-            const data = getPassingSchema(schemas, value, '');
-            if (data.passing) return data.schema.normalize(value);
-            const meta = getMultiError(data.errors, '');
-            const err = Error(meta.message);
-            util.throwWithMeta(err, meta);
-        },
+    const result = {};
 
-        validate: function(value, prefix) {
-            const o = this.error(value, prefix);
-            if (o) {
-                const err = Error(o.message);
-                util.throwWithMeta(err, o);
-            }
+    result.error = function(value, prefix) {
+        const data = getPassingSchema(schemas, value);
+        return data.passing ? null : getMultiError(data.errors, prefix);
+    };
+
+    result.hash = function() {
+        return hash;
+    };
+
+    result.normalize = function(value) {
+        const data = getPassingSchema(schemas, value, '');
+        if (data.passing) return data.schema.normalize(value);
+        const meta = getMultiError(data.errors, '');
+        const err = Error(meta.message);
+        util.throwWithMeta(err, meta);
+    };
+
+    result.toJSON = function() {
+        return schemas.map(schema => schema.toJSON());
+    };
+
+    result.validate = function(value, prefix) {
+        const o = this.error(value, prefix);
+        if (o) {
+            const err = Error(o.message);
+            util.throwWithMeta(err, o);
         }
-    }
+    };
+
+    return result;
 }
 
 Schema.controllers = require('./controllers')();
