@@ -23,17 +23,38 @@ module.exports = Schema;
 /**
  * Get a typed schema.
  * @param {object} [configuration={}]
+ * @param {object|object[]} [additionalProperties={}]
  * @returns {{ error: Function, normalize: Function, validate: Function }}
  */
-function Schema (configuration) {
+function Schema (configuration, additionalProperties) {
     if (arguments.length === 0 || configuration === null) configuration = {};
+    if (arguments.length < 2) additionalProperties = {};
 
     // single configuration leads to single schema
-    if (!Array.isArray(configuration)) return createSchema(configuration);
+    if (!Array.isArray(configuration)) {
+        if (Array.isArray(additionalProperties)) {
+            const err = Error('Additional properties cannot be an array when the configuration is not an array of objects.');
+            util.throwWithMeta(err, util.errors.config);
+        }
+        return createSchema(configuration, additionalProperties);
+    }
+
+    // if additional properties is just an object then make it into an array
+    if (additionalProperties && util.isPlainObject(additionalProperties) && !Array.isArray(additionalProperties)) {
+        const ar = [];
+        configuration.forEach(() => ar.push(additionalProperties));
+        additionalProperties = ar;
+    }
+
+    // if additional properties length does not match configuration length then throw an error
+    if (additionalProperties && additionalProperties.length !== configuration.length) {
+        const err = Error('The number of additional properties objects must match the number of configurations.');
+        util.throwWithMeta(err, util.errors.config);
+    }
 
     // multiple configuration tries all schemas
     const hashes = {};
-    const schemas = configuration.map(createSchema)
+    const schemas = configuration.map((config, i) => createSchema(config, additionalProperties[i]))
         .filter(schema => {
             const hash = schema.hash();
             if (hashes[hash]) return false;
@@ -89,9 +110,10 @@ Schema.controllers = require('./controllers')();
 /**
  * Create a schema for the provided configuration.
  * @param {object} configuration
+ * @param {object} [additionalProperties={}]
  * @returns {{ error: Function, normalize: Function, validate: Function }}
  */
-function createSchema(configuration) {
+function createSchema(configuration, additionalProperties) {
 
     // validate input parameter
     if (!util.isPlainObject(configuration)) {
@@ -115,7 +137,7 @@ function createSchema(configuration) {
     }
 
     // return a schema object
-    return new item.Schema(config, Schema);
+    return new item.Schema(config, Schema, additionalProperties);
 }
 
 function getPassingSchema(schemas, value) {
