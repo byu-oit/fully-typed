@@ -392,54 +392,12 @@ describe('TypedObject', () => {
             expect(o.error({ x: true })).not.to.be.null;
         });
 
-        // TODO: validate non-specified parameters against general schema
-        /*describe('schema', () => {
-
-            describe('extends across properties', () => {
-                let o;
-
-                before(() => {
-                    o = Schema({
-                        type: Object,
-                        properties: {
-                            a: {
-                                type: String
-                            },
-                            b: {
-                                type: Number
-                            }
-                        },
-                        schema: {
-
-                        }
-                    });
-                });
-
-            });
-
-        });*/
-
-
-
-        /*before(() => {
-            o = Schema({
-                type: Object,
-                properties: {
-                    a: [
-                        {
-                            type: String
-                        },
-                        {
-                            type: Number
-                        }
-                    ]
-                },
-                schema: {
-                    type: Boolean,
-                    required: true
-                }
-            });
-        });*/
+        it('can validate against non-defined parameters using schema', () => {
+            const o = Schema({ type: Object, schema: {type: Number} });
+            expect(o.error({ foo: 123 })).to.be.null;
+            expect(o.error({ foo: 'abc' })).not.to.be.null;
+            expect(o.error({ foo: true })).not.to.be.null;
+        });
 
     });
 
