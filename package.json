@@ -13,7 +13,9 @@
   "keywords": [
     "typed",
     "type",
-    "typescript"
+    "typescript",
+    "ducktype",
+    "validation"
   ],
   "author": "James Speirs <james.speirs@gmail.com>",
   "license": "Apache-2.0",
