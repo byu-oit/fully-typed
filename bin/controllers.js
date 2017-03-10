@@ -74,29 +74,18 @@ function Controllers() {
          * Create a schema instance.
          * @param {object} config The configuration for the schema.
          * @param {object} schema The schema controller.
-         * @param {object} [additionalProperties] Properties to add to the schema instance using the property descriptor definition.
          * @constructor
          */
-        function Schema(config, schema, additionalProperties) {
+        function Schema(config, schema) {
             const length = ctrls.length;
-            const self = this;
+            const extended = config.hasOwnProperty('__') ? config.__ : {};
             this.Schema = schema;
-
-            // if additional properties are provided then validate them
-            if (additionalProperties && !additionalPropertiesAreValid(additionalProperties)) {
-                const err = Error('Additional properties must be an object define property descriptor.');
-                util.throwWithMeta(err, util.errors.config);
-            }
-
-            // add additional properties (if specified) to this object
-            if (additionalProperties && typeof additionalProperties === 'object') {
-                Object.keys(additionalProperties).forEach(key => {
-                    Object.defineProperty(self, key, additionalProperties[key]);
-                });
-            }
 
             // apply controllers to this schema
             for (let i = 0; i < length; i++) ctrls[i].call(this, config);
+
+            // add additional properties
+            if (util.isPlainObject(extended.properties)) Object.defineProperties(this, extended.properties);
 
             // create a hash
             const protect = {};
@@ -255,20 +244,6 @@ function Controllers() {
     };
 
     return factory;
-}
-
-function additionalPropertiesAreValid(properties) {
-    if (!util.isPlainObject(properties)) return false;
-
-    const keys = Object.keys(properties);
-    const length = keys.length;
-    for (let i = 0; i < length; i++) {
-        const value = properties[keys[i]];
-        if (!util.isPlainObject(value)) return false;
-        if (!value.hasOwnProperty('get') && !value.hasOwnProperty('value')) return false;
-    }
-
-    return true;
 }
 
 function getNormalizedSchemaConfiguration(obj) {

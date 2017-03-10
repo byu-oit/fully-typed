@@ -38,10 +38,13 @@ function TypedObject (config) {
         util.throwWithMeta(err, util.errors.config);
     }
 
-    if (config.hasOwnProperty('schema') && !util.isValidSchemaConfiguration(config.schema)) {
-        const message = util.propertyErrorMessage('schema', config.schema, 'Must be a plain object or an array of plain objects.');
-        const err = Error(message);
-        util.throwWithMeta(err, util.errors.config);
+    if (config.hasOwnProperty('schema')) {
+        if (!util.isValidSchemaConfiguration(config.schema)) {
+            const message = util.propertyErrorMessage('schema', config.schema, 'Must be a plain object or an array of plain objects.');
+            const err = Error(message);
+            util.throwWithMeta(err, util.errors.config);
+        }
+        validateSchemaConfiguration('schema', config.schema);
     }
 
     Object.defineProperties(object, {
@@ -79,10 +82,10 @@ function TypedObject (config) {
         schema: {
             /**
              * @property
-             * @name TypedObject#properties
-             * @type {object}
+             * @name TypedObject#schema
+             * @type {object, undefined}
              */
-            value: config.schema,
+            value: config.schema ? Schema(mergeSchemas(config.schema)) : undefined,
             writable: false
         }
 
@@ -91,45 +94,43 @@ function TypedObject (config) {
     // add typing to each property specified in the configuration
     Object.keys(object.properties)
         .forEach(function(key) {
-            let value = object.properties[key] || {};
-            const valueIsPlain = !Array.isArray(value);
+            let options = object.properties[key] || {};
+            const optionsIsPlain = !Array.isArray(options);
             const schemaIsPlain = !Array.isArray(config.schema);
 
-            if (!util.isValidSchemaConfiguration(value)) {
+            if (!util.isValidSchemaConfiguration(options)) {
                 const err = Error('Invalid configuration for property: ' + key + '. Must be a plain object.');
                 util.throwWithMeta(err, util.errors.config);
             }
 
             // merge generic schema with property specific schemas
-            let additionalProperties = {};
             if (config.schema) {
-                if (schemaIsPlain && valueIsPlain) {
-                    value = Object.assign({}, config.schema, value);
-                    additionalProperties = { required: { value: !!value.required } };
+                if (schemaIsPlain && optionsIsPlain) {
+                    options = mergeSchemas(config.schema, options);
                 } else if (schemaIsPlain) {
-                    value = value.map(item => Object.assign({}, config.schema, item));
-                    additionalProperties = value.map(v => { return { required: { value: !!v.required } }});
-                } else if (valueIsPlain) {
-                    value = config.schema.map(item => Object.assign({}, item, value));
-                    additionalProperties = value.map(v => { return { required: { value: !!v.required } }});
+                    options = options.map(item => mergeSchemas(config.schema, item));
+                } else if (optionsIsPlain) {
+                    options = config.schema.map(item => mergeSchemas(item, options));
                 } else {
                     const array = [];
-                    for (let i = 0; i < value.length; i++) {
+                    for (let i = 0; i < options.length; i++) {
                         for (let j = 0; j < config.schema.length; j++) {
-                            array.push(Object.assign({}, config.schema[j], value[i]));
+                            array.push(mergeSchemas(config.schema[j], options[i]));
                         }
                     }
-                    value = array;
-                    additionalProperties = value.map(v => { return { required: { value: !!v.required } }});
+                    options = array;
                 }
+            } else if (optionsIsPlain) {
+                options = mergeSchemas(options);
             } else {
-                additionalProperties = { required: { value: !!value.required } };
+                options = options.map(o => mergeSchemas(o));
             }
 
-            const schema = Schema(value, additionalProperties);
+            // create a schema instance for each property
+            const schema = Schema(options);
             object.properties[key] = schema;
 
-            if (Array.isArray(value)) {
+            if (Array.isArray(options)) {
                 schema.schemas.forEach((s, i) => validateSchemaConfiguration(key, s))
             } else {
                 validateSchemaConfiguration(key, schema);
@@ -152,25 +153,31 @@ TypedObject.prototype.error = function(value, prefix) {
 
     const errors = [];
     const object = this;
+
+    // check that all required properties exist
     Object.keys(object.properties)
         .forEach(function(key) {
             const schema = object.properties[key];
-
-            // if required then check that it exists on the value
             if (schema.required && !value.hasOwnProperty(key)) {
                 const err = util.errish('Missing required value for property: ' + key, TypedObject.errors.required);
                 err.property = key;
                 errors.push(err);
-                return;
             }
+        });
 
-            // run inherited error check if it exists on the value
-            if (value.hasOwnProperty(key)) {
-                const err = schema.error(value[key]);
-                if (err) {
-                    err.property = key;
-                    errors.push(err);
-                }
+    // validate each property value
+    Object.keys(value)
+        .forEach(key => {
+            const schema = object.properties.hasOwnProperty(key)
+                ? object.properties[key]
+                : object.schema;
+            if (!schema) return;
+
+            // run inherited error check on property
+            const err = schema.error(value[key]);
+            if (err) {
+                err.property = key;
+                errors.push(err);
             }
         });
 
@@ -228,6 +235,24 @@ TypedObject.errors = {
 
 
 
+
+function mergeSchemas(general, specific) {
+    const merged = Object.assign({}, general, specific || {});
+    merged.__ = {
+        properties: {
+            required: {
+                value: !!merged.required
+            }
+        }/*,
+        error: function(value, prefix) {
+            return;
+        },
+        normalize: function(value) {
+
+        }*/
+    };
+    return merged;
+}
 
 function validateSchemaConfiguration (key, schema) {
 
