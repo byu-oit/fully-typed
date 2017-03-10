@@ -1,4 +1,3 @@
-[![npm module downloads](http://img.shields.io/npm/dt/fully-typed.svg)](https://www.npmjs.org/package/fully-typed)
 [![Build status](https://img.shields.io/travis/byu-oit-appdev/fully-typed.svg?style=flat)](https://travis-ci.org/byu-oit-appdev/fully-typed)
 
 # fully-typed
@@ -8,10 +7,60 @@ Run time type validation, transformation, and error generator that works out of 
 ### Features
 
 - Create schemas to validate values against.
-- Build in support for arrays, booleans, functions, numbers, objects, strings, and symbols.
+- Built in support for arrays, booleans, functions, numbers, objects, strings, and symbols.
 - Extensible - use plugins or create your own to integrate more types.
 - Get detailed error messages when a wrong value is run against a schema.
 - Auto throw errors when normalizing or validating.
+
+**Example**
+
+```js
+const Typed = require('fully-typed');
+
+const schema = Typed({
+    type: Number,
+    default: 0
+});
+
+// will only add numbers, throws errors otherwise
+exports.add = function (a, b) {
+    a = schema.normalize(a);    // throw an error if not a number or if undefined defaults to 0
+    b = schema.normalize(b);
+    return a + b;
+};
+```
+
+**Example**
+
+```js
+const Typed = require('fully-typed');
+
+const schema = Typed({
+    type: Object,
+    properties: {
+        name: {
+            required: true,
+            type: String,
+            minLength: 1
+        },
+        age: {
+            type: Number,
+            min: 0
+        },
+        employed: {
+            type: Boolean,
+            default: true
+        }
+    }
+});
+
+function addPerson(configuration) {
+    const config = schema.normalize(configuration); // If the input is invalid an error is thrown
+                                                    // with specifics as to why it failed
+    // ... do more stuff
+}
+
+```
 
 **Example**
 
@@ -615,4 +664,103 @@ const schema = Typed({
 
 schema.validate(1);     // no error thrown
 schema.validate('a');   // throws an error
+```
+
+## Plugins
+
+### Write the Plugin
+
+To write a plugin you need to define and export the controller for a type.
+
+**truthy-controller.js**
+
+```js
+module.exports = Truthy;
+
+function Truthy (config) {
+
+    // process the user's schema configuration
+    const additonalNotTruthyValues = Array.isArray(config.notTruthy)
+        ? config.notTruthy
+        : [];
+    const allNotTruthyValues = [false, 0, null, '', undefined].concat(additionalNotTruthyValues);
+
+    // define properties that the Foo type keeps
+    Object.defineProperties(this, {
+
+        notTruthy: {
+            value: allNotTruthyValues,
+            writable: false
+        }
+
+    });
+
+}
+
+Foo.prototype.error = function (value, prefix) {
+    const falsy = this.notTruthy.indexOf(value) !== -1;
+    return falsy
+        ? prefix + 'Value is not truthy: ' + value
+        : null;
+};
+
+TypedBoolean.prototype.normalize = function (value) {
+    return !!value;     // make the value true (not just truthy)
+};
+```
+
+### Add a Plugin
+
+You can add an existing plugin to any project by telling fully-typed about the new type controller.
+
+```js
+const Typed             = require('fully-typed');
+const Truthy            = require('./truthy-controller');
+
+Typed.controllers.define(['truthy'], Truthy, ['typed']);
+```
+
+#### Schema.controllers.define
+
+**Parameters:**
+
+- *aliases* - An array of aliases that are used when defining schemas to identify the controller to use. Schemas can be any value and any type. For example, the predefined `String` schema has two aliases: `['string', String]'`.
+
+- *controller* - The controller to define.
+
+- *inherits* - An array of aliases whose configuration properties, validations, and normalizations should be inherited for this controller. For example, all type definitions for fully-typed inherit from `'typed'`.
+
+#### An Idea
+
+You may not want to ask the user's of your plugin to specify it's aliases and dependencies, but you do need to ask the user of your plugin to supply the Schema library to be used. Here's an alternative.
+
+Your module:
+
+```js
+const Truthy            = require('./truthy-controller');
+
+module.exports = function (Typed) {
+    Typed.controllers.define(['truthy', Truthy], Truthy, ['typed']);
+    return Truthy;
+}
+```
+
+Their Code:
+
+```js
+const Typed             = require('fully-typed');
+const Truthy            = require('truthy')(Typed);
+
+const schema = Typed({
+    type: Truthy,           // or 'truthy' since that is an alias too
+    notTruthy: ['false']    // string of 'false' added as non-truthy value
+});
+
+function foo(param) {
+    schema.validate(param);
+    // do stuff
+};
+
+foo('hello');       // runs successfully
+foo('false');       // throws an error stating: 'Value is not truthy: false'
 ```
