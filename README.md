@@ -108,6 +108,9 @@ positiveIntegerSchema.normalize(-1);       // validate will run prior to normali
     - [error](#error)
     - [normalize](#normalize)
     - [validate](#validate)
+- [Plugins](#plugins)
+    - [Write a Plugin](#write-a-plugin)
+    - [Add a Plugin](#add-a-plugin)
 
 
 ## Schema Configurations
@@ -668,7 +671,7 @@ schema.validate('a');   // throws an error
 
 ## Plugins
 
-### Write the Plugin
+### Write a Plugin
 
 To write a plugin you need to define and export the controller for a type.
 
@@ -680,7 +683,7 @@ module.exports = Truthy;
 function Truthy (config) {
 
     // process the user's schema configuration
-    const additonalNotTruthyValues = Array.isArray(config.notTruthy)
+    const additionalNotTruthyValues = Array.isArray(config.notTruthy)
         ? config.notTruthy
         : [];
     const allNotTruthyValues = [false, 0, null, '', undefined].concat(additionalNotTruthyValues);
@@ -697,14 +700,14 @@ function Truthy (config) {
 
 }
 
-Foo.prototype.error = function (value, prefix) {
+Truthy.prototype.error = function (value, prefix) {
     const falsy = this.notTruthy.indexOf(value) !== -1;
     return falsy
         ? prefix + 'Value is not truthy: ' + value
         : null;
 };
 
-TypedBoolean.prototype.normalize = function (value) {
+Truthy.prototype.normalize = function (value) {
     return !!value;     // make the value true (not just truthy)
 };
 ```
