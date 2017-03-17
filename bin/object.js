@@ -166,20 +166,22 @@ TypedObject.prototype.error = function(value, prefix) {
         });
 
     // validate each property value
-    Object.keys(value)
-        .forEach(key => {
-            const schema = object.properties.hasOwnProperty(key)
-                ? object.properties[key]
-                : object.schema;
-            if (!schema) return;
+    if (value) {
+        Object.keys(value)
+            .forEach(key => {
+                const schema = object.properties.hasOwnProperty(key)
+                    ? object.properties[key]
+                    : object.schema;
+                if (!schema) return;
 
-            // run inherited error check on property
-            const err = schema.error(value[key]);
-            if (err) {
-                err.property = key;
-                errors.push(err);
-            }
-        });
+                // run inherited error check on property
+                const err = schema.error(value[key]);
+                if (err) {
+                    err.property = key;
+                    errors.push(err);
+                }
+            });
+    }
 
     if (errors.length > 0) {
         const count = errors.length === 1 ? 'One error with property' : 'Multiple errors with properties';
