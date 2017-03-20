@@ -204,15 +204,17 @@ TypedObject.prototype.normalize = function(value) {
             if (item.hasDefault && !value.hasOwnProperty(key)) value[key] = item.default;
         });
 
-    Object.keys(value)
-        .forEach(function(key) {
-            if (object.properties.hasOwnProperty(key)) {
-                const schema = object.properties[key];
-                result[key] = schema.normalize(value[key]);
-            } else if (!object.clean) {
-                result[key] = value[key];
-            }
-        });
+    if (value) {
+        Object.keys(value)
+            .forEach(function (key) {
+                if (object.properties.hasOwnProperty(key)) {
+                    const schema = object.properties[key];
+                    result[key] = schema.normalize(value[key]);
+                } else if (!object.clean) {
+                    result[key] = value[key];
+                }
+            });
+    }
 
     return result;
 };
