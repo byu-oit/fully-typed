@@ -20,11 +20,14 @@ const controllers       = Schema.controllers;
 
 module.exports = Schema;
 
-controllers.define(['typed'],               require('./bin/typed'));
-controllers.define(['array', Array],        require('./bin/array'),     ['typed']);
-controllers.define(['boolean', Boolean],    require('./bin/boolean'),   ['typed']);
-controllers.define(['function', Function],  require('./bin/function'),  ['typed']);
-controllers.define(['number', Number],      require('./bin/number'),    ['typed']);
-controllers.define(['object', Object],      require('./bin/object'),    ['typed']);
-controllers.define(['string', String],      require('./bin/string'),    ['typed']);
-controllers.define(['symbol', Symbol],      require('./bin/symbol'),    ['typed']);
+Schema.OneOf = Symbol('one-of');
+
+controllers.define(['typed'],                   require('./bin/typed'));
+controllers.define(['array', Array],            require('./bin/array'),     ['typed']);
+controllers.define(['boolean', Boolean],        require('./bin/boolean'),   ['typed']);
+controllers.define(['function', Function],      require('./bin/function'),  ['typed']);
+controllers.define(['number', Number],          require('./bin/number'),    ['typed']);
+controllers.define(['object', Object],          require('./bin/object'),    ['typed']);
+controllers.define(['one-of', Schema.OneOf],    require('./bin/one-of'),    ['typed']);
+controllers.define(['string', String],          require('./bin/string'),    ['typed']);
+controllers.define(['symbol', Symbol],          require('./bin/symbol'),    ['typed']);
