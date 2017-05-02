@@ -33,19 +33,21 @@ function TypedObject (config) {
     const hasProperties = config.hasOwnProperty('properties');
 
     if (hasProperties && !util.isValidSchemaConfiguration(config.properties)) {
-        const message = util.propertyErrorMessage('properties', config.properties, 'Must be a plain object or an array of plain objects.');
+        const message = util.propertyErrorMessage('properties', config.properties, 'Must be a plain object.');
         const err = Error(message);
         util.throwWithMeta(err, util.errors.config);
     }
 
     if (config.hasOwnProperty('schema')) {
         if (!util.isValidSchemaConfiguration(config.schema)) {
-            const message = util.propertyErrorMessage('schema', config.schema, 'Must be a plain object or an array of plain objects.');
+            const message = util.propertyErrorMessage('schema', config.schema, 'Must be a plain object.');
             const err = Error(message);
             util.throwWithMeta(err, util.errors.config);
         }
         validateSchemaConfiguration('schema', config.schema);
     }
+
+    const schemaIsNotOneOf = config.hasOwnProperty('schema') ? !Schema.controllers.is('one-of', config.schema.type) : true;
 
     Object.defineProperties(object, {
 
@@ -95,8 +97,7 @@ function TypedObject (config) {
     Object.keys(object.properties)
         .forEach(function(key) {
             let options = object.properties[key] || {};
-            const optionsIsPlain = !Array.isArray(options);
-            const schemaIsPlain = !Array.isArray(config.schema);
+            const optionsIsNotOneOf = !Schema.controllers.is('one-of', options.type);
 
             if (!util.isValidSchemaConfiguration(options)) {
                 const err = Error('Invalid configuration for property: ' + key + '. Must be a plain object.');
@@ -105,37 +106,42 @@ function TypedObject (config) {
 
             // merge generic schema with property specific schemas
             if (config.schema) {
-                if (schemaIsPlain && optionsIsPlain) {
-                    options = mergeSchemas(config.schema, options);
-                } else if (schemaIsPlain) {
-                    options = options.map(item => mergeSchemas(config.schema, item));
-                } else if (optionsIsPlain) {
-                    options = config.schema.map(item => mergeSchemas(item, options));
+                if (schemaIsNotOneOf && optionsIsNotOneOf) {
+                    options = mergeSchemas(config.schema, options); // TODO: test if oneOf can not be array - should not be possible
+                } else if (schemaIsNotOneOf) {
+                    options.oneOf = options.oneOf.map(item => mergeSchemas(config.schema, item));
+                } else if (optionsIsNotOneOf) {
+                    options.oneOf = config.schema.oneOf.map(item => mergeSchemas(item, options));
+                    options.type = 'one-of';
                 } else {
                     const array = [];
-                    for (let i = 0; i < options.length; i++) {
-                        for (let j = 0; j < config.schema.length; j++) {
-                            array.push(mergeSchemas(config.schema[j], options[i]));
+                    const optionsLength = options.oneOf.length;
+                    const schemaLength = config.schema.oneOf.length;
+                    for (let i = 0; i < optionsLength; i++) {
+                        for (let j = 0; j < schemaLength; j++) {
+                            array.push(mergeSchemas(config.schema.oneOf[j], options.oneOf[i]));
                         }
                     }
-                    options = array;
+                    options.oneOf = array;
+                    options.type = 'one-of';
                 }
-            } else if (optionsIsPlain) {
-                options = mergeSchemas(options);
-            } else {
-                options = options.map(o => mergeSchemas(o));
             }
 
             // create a schema instance for each property
             const schema = Schema(options);
             object.properties[key] = schema;
 
-            if (Array.isArray(options)) {
-                schema.schemas.forEach((s, i) => validateSchemaConfiguration(key, s))
+            // add required property back onto the schema (it was stripped off by controllers during schema construction)
+            if (schemaIsNotOneOf && optionsIsNotOneOf) {
+                schema.required = options.required;
             } else {
-                validateSchemaConfiguration(key, schema);
+                schema.oneOf.forEach((item, index) => {
+                    item.required = options.oneOf[index].required;
+                });
             }
 
+            // validate that not required and has default
+            validateSchemaConfiguration(key, schema);
         });
 
     return object;
@@ -241,21 +247,23 @@ TypedObject.errors = {
 
 
 function mergeSchemas(general, specific) {
+    return Object.assign({}, general, specific || {});
+    /*
     const merged = Object.assign({}, general, specific || {});
     merged.__ = {
         properties: {
             required: {
                 value: !!merged.required
             }
-        }/*,
+        }/!*,
         error: function(value, prefix) {
             return;
         },
         normalize: function(value) {
 
-        }*/
+        }*!/
     };
-    return merged;
+    return merged;*/
 }
 
 function validateSchemaConfiguration (key, schema) {
