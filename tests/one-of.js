@@ -16,6 +16,7 @@
  **/
 'use strict';
 const expect            = require('chai').expect;
+const OneOf             = require('../bin/one-of');
 const Schema            = require('../index');
 const util              = require('../bin/util');
 
@@ -24,14 +25,17 @@ describe('one of schemas', () => {
     describe('string or number', () => {
         let schema;
 
-        before(() => schema = Schema([
-            {
-                type: String
-            },
-            {
-                type: Number
-            }
-        ]));
+        before(() => schema = Schema({
+            type: 'one-of',
+            oneOf: [
+                {
+                    type: String
+                },
+                {
+                    type: Number
+                }
+            ]
+        }));
 
         it('can be a string', () => {
             const err = schema.error('foo');
@@ -45,17 +49,17 @@ describe('one of schemas', () => {
 
         it('cannot be a boolean', () => {
             const err = schema.error(true);
-            expect(err.code).to.equal(util.errors.multi.code);
+            expect(err.code).to.equal(OneOf.errors.oneOf.code);
         });
 
         it('cannot be an object', () => {
             const err = util.extractError(() => schema.validate({}) );
-            expect(err.code).to.equal(util.errors.multi.code);
+            expect(err.code).to.equal(OneOf.errors.oneOf.code);
         });
 
         it('normalize error', () => {
             const err = util.extractError(() => schema.normalize({}) );
-            expect(err.code).to.equal(util.errors.multi.code);
+            expect(err.code).to.equal(OneOf.errors.oneOf.code);
         });
 
     });

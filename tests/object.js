@@ -127,8 +127,14 @@ describe('TypedObject', () => {
             expect(() => Schema(config)).to.not.throw(Error);
         });
 
-        it('can be an array of objects', () => {
-            const config = { type: Object, schema: [{ type: String }, { type: Number }] };
+        it('can be one-of', () => {
+            const config = {
+                type: Object,
+                schema: {
+                    type: Schema.OneOf,
+                    oneOf: [{ type: String }, { type: Number }]
+                }
+            };
             expect(() => Schema(config)).to.not.throw(Error);
         });
 
@@ -394,7 +400,15 @@ describe('TypedObject', () => {
         });
 
         it('checks for array of schemas', () => {
-            const o = Schema({ type: Object, properties: { x: [{ type: Number }, {type: String}] } });
+            const o = Schema({
+                type: Object,
+                properties: {
+                    x: {
+                        type: 'one-of',
+                        oneOf: [{ type: Number }, {type: String}]
+                    }
+                }
+            });
             expect(o.error({ x: 'hello' })).to.be.null;
             expect(o.error({ x: 123 })).to.be.null;
             expect(o.error({ x: true })).not.to.be.null;
