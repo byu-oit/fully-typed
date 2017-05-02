@@ -223,6 +223,20 @@ function Controllers() {
     };
 
     /**
+     * Determine if two aliases are for the same controller.
+     * @param {*} alias1
+     * @param {*} alias2
+     * @returns {boolean}
+     */
+    factory.is = function(alias1, alias2) {
+        if (alias1 === alias2) return true;
+        if (!store.has(alias1) || !store.has(alias2)) return false;
+        const item1 = store.get(alias1);
+        const item2 = store.get(alias2);
+        return item1.controller === item2.controller;
+    };
+
+    /**
      * @name Controllers#list
      * @returns {{constructor: Function, controller: Function, inherits: string[], name: string}[]}
      */
