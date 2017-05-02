@@ -11,6 +11,7 @@
     "test": "mocha tests"
   },
   "keywords": [
+    "fully-typed",
     "typed",
     "type",
     "typescript",
