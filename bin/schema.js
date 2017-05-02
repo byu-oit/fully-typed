@@ -28,71 +28,6 @@ module.exports = Schema;
 function Schema (configuration) {
     if (arguments.length === 0 || configuration === null) configuration = {};
 
-    // single configuration leads to single schema
-    if (!Array.isArray(configuration)) return createSchema(configuration);
-
-    // multiple configuration tries all schemas
-    const hashes = {};
-    const schemas = configuration.map((config, i) => createSchema(config))
-        .filter(schema => {
-            const hash = schema.hash();
-            if (hashes[hash]) return false;
-            hashes[hash] = true;
-            return true;
-        });
-
-    // generate the hash
-    const hash = crypto.createHash('sha256')
-        .update(schemas.map(schema => schema.hash).join(''))
-        .digest('hex');
-
-    const result = new MultiSchema();
-
-    result.error = function(value, prefix) {
-        const data = getPassingSchema(schemas, value);
-        return data.passing ? null : getMultiError(data.errors, prefix);
-    };
-
-    result.hash = function() {
-        return hash;
-    };
-
-    result.normalize = function(value) {
-        const data = getPassingSchema(schemas, value, '');
-        if (data.passing) return data.schema.normalize(value);
-        const meta = getMultiError(data.errors, '');
-        const err = Error(meta.message);
-        util.throwWithMeta(err, meta);
-    };
-
-    Object.defineProperty(result, 'schemas', {
-        get: () => schemas.slice(0)
-    });
-
-    result.toJSON = function() {
-        return schemas.map(schema => schema.toJSON());
-    };
-
-    result.validate = function(value, prefix) {
-        const o = this.error(value, prefix);
-        if (o) {
-            const err = Error(o.message);
-            util.throwWithMeta(err, o);
-        }
-    };
-
-    return result;
-}
-
-Schema.controllers = require('./controllers')();
-
-/**
- * Create a schema for the provided configuration.
- * @param {object} configuration
- * @returns {{ error: Function, normalize: Function, validate: Function }}
- */
-function createSchema(configuration) {
-
     // validate input parameter
     if (!util.isPlainObject(configuration)) {
         const err = Error('If provided, the schema configuration must be a plain object. Received: ' + configuration);
@@ -118,29 +53,4 @@ function createSchema(configuration) {
     return new item.Schema(config, Schema);
 }
 
-function getPassingSchema(schemas, value) {
-    const len = schemas.length;
-    const errors = [];
-    for (let i = 0; i < len; i++) {
-        const err = schemas[i].error(value, '');
-        if (!err) return {
-            passing: true,
-            schema: schemas[i]
-        };
-        errors.push(err);
-    }
-    return {
-        passing: false,
-        errors: errors
-    };
-}
-
-function getMultiError(errors, prefix) {
-    const message = 'All possible schemas have errors:\n  ' +
-        errors.map(err => err.message).join('\n  ');
-    const err = util.errish((prefix || '') + message, util.errors.multi);
-    err.errors = errors;
-    return err;
-}
-
-function MultiSchema() {}
+Schema.controllers = require('./controllers')();
