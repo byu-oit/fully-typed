@@ -479,7 +479,7 @@ In addition to the [shared configuration options](#shared-configuration-options)
             age: {
                 // because this property is of type Number it extends one of the generic number schemas
                 type: Number
-            }
+            },
             foo: {
                 // the type might be a String or Number
                 min: 5,             // this property will only apply if the type is a number and
@@ -516,18 +516,19 @@ In addition to the [shared configuration options](#shared-configuration-options)
 
 It is possible to allow multiple variations of schemas. For example, you may want to allow numbers and strings.
 
-Any place where you can define a schema configuration object you can define multiple variations by passing an array of schema configurations.
-
 ```js
-const schema = Typed([
-    {
-        type: Number,
-        min: 0
-    },
-    {
-        type: String
-    }
-]);
+const schema = Typed({
+    type: Typed.OneOf,
+    oneOf: [
+        {
+           type: Number,
+           min: 0
+        },
+        {
+           type: String
+        }
+    ]
+});
 
 schema.error('Foo');    // no errors
 schema.error(1);        // no errors
@@ -671,56 +672,123 @@ schema.validate('a');   // throws an error
 
 ## Plugins
 
-### Write a Plugin
+[Browse Existing Plugins](https://www.npmjs.com/browse/keyword/fully-typed)
 
-To write a plugin you need to define and export the controller for a type.
+The fully typed library can be extended with new types. To do this you need to complete two steps:
 
-**truthy-controller.js**
+1. [Write the type's controller](#write-the-controller)
 
-```js
-module.exports = Truthy;
+2. [Register the type's controller](#register-the-controller)
 
-function Truthy (config) {
+**Important:** If you create a plugin and publish it to npm then be sure to add a keyword of `full-typed` to your package.json so that the plugin can easily be found.
 
-    // process the user's schema configuration
-    const additionalNotTruthyValues = Array.isArray(config.notTruthy)
-        ? config.notTruthy
-        : [];
-    const allNotTruthyValues = [false, 0, null, '', undefined].concat(additionalNotTruthyValues);
+### Write the Controller
+ 
+1. Define a constructor function that accepts a configuration as it's only parameter.
 
-    // define properties that the Foo type keeps
-    Object.defineProperties(this, {
+2. Validate the configuration properties that are important to your controller. (In this example we define max and min.)
 
-        notTruthy: {
-            value: allNotTruthyValues,
-            writable: false
+3. Define the controller's properties.
+
+    ```js
+    // #1 - define controller constructor 
+    function TypedDate (config) {
+        
+        // #2 - validate configuration properties
+        if (config.hasOwnProperty('max') && !(config.max instanceof Date)) {
+            throw Error('Property max must be a Date object. Received: ' + config.max);
+        }        
+        if (config.hasOwnProperty('min') && !(config.min instanceof Date)) {
+            throw Error('Property min must be a Date object. Received: ' + config.min);
+        }        
+        if (config.hasOwnProperty('max') && config.hasOwnProperty('min') && +config.min > +config.max) {
+            throw Error('The max date value must be greater than or equal to the min date value.');
+        }        
+        
+        // #3 - define the controller properties
+        Object.defineProperties(this, {
+            max: {
+                value: config.hasOwnProperty('max') ? new Date(+config.max) : undefined
+            },
+            min: {
+                value: config.hasOwnProperty('min') ? new Date(+config.min) : undefined
+            },
+            startOfDay: {
+                value: !!config.startOfDay
+            }
+        });
+        
+    }
+    ```
+
+4. Optionally define the error generator function. (This function will be used for normalization and validation.)
+
+    This function will receive two parameters when called: 1) the value to validate, 2) a prefix to add to the beginning of any returned error messages.
+
+    This function should return a string with an error message if an invalid value is passed in, otherwise it should return `null`.
+     
+    ```js
+    // #4 - define the error generator function
+    TypedDate.prototype.error = function (value, prefix) {
+        
+        if (!(value instanceof Date)) {
+            return prefix + 'Value must be a date.';
         }
+        
+        if (this.max !== undefined && this.max < value) {
+            return prefix + 'Date is above allowed max date.';
+        }
+        
+        if (this.min !== undefined && this.min > value) {
+            return prefix + 'Date is below allowed min date.';
+        }
+        
+        return null;
+    };
+    ```
 
-    });
+5. Optionally define the normalize function. This function will be called after passing validation and can make any transformations to the value.
 
-}
+    This function receives the value parameter. It must return the normalized value.
 
-Truthy.prototype.error = function (value, prefix) {
-    const falsy = this.notTruthy.indexOf(value) !== -1;
-    return falsy
-        ? prefix + 'Value is not truthy: ' + value
-        : null;
-};
+    ```js
+    // #5 - define the normalize function
+    TypedDate.prototype.normalize = function (value) {
+        const result = new Date(+value);
+        if (this.startOfDay) {
+            result.setHours(0);
+            result.setMinutes(0);
+            result.setSeconds(0);
+            result.setMilliseconds(0);
+        }
+        return result;
+    }
+    ```
 
-Truthy.prototype.normalize = function (value) {
-    return !!value;     // make the value true (not just truthy)
-};
-```
+### Register the Controller
 
-### Add a Plugin
-
-You can add an existing plugin to any project by telling fully-typed about the new type controller.
+Whether you download someone else's controller or create your own you will still need to register the controller.
 
 ```js
 const Typed             = require('fully-typed');
-const Truthy            = require('./truthy-controller');
+const TypedDate         = require('fully-typed-date');
 
-Typed.controllers.define(['truthy'], Truthy, ['typed']);
+// register the TypedDate controller under the 
+// type aliases: 'date' and Date. 
+// Also, it extends 'typed' controller.
+Typed.controllers.define(['date', Date], TypedDate, ['typed']);
+
+
+
+const Typed             = require('fully-typed');
+const TypedDate         = require('fully-typed-date');
+Typed.controllers.register(TypedDate);
+
+
+
+const Typed             = require('fully-typed');
+require('fully-typed-date')(Typed);
+
 ```
 
 #### Schema.controllers.define
