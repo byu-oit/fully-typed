@@ -40,6 +40,17 @@ function TypedOneOf (config) {
         util.throwWithMeta(err, util.errors.config);
     }
 
+    // create each unique schema
+    const hashes = {};
+    const schemas = config.oneOf
+        .map(item => Schema(item))
+        .filter(schema => {
+            const hash = schema.hash();
+            if (hashes[hash]) return false;
+            hashes[hash] = true;
+            return true;
+        });
+
     // define properties
     Object.defineProperties(oneOf, {
 
@@ -49,7 +60,7 @@ function TypedOneOf (config) {
              * @name TypedOneOf#oneOf
              * @type {object}
              */
-            value: config.oneOf.map(item => Schema(item)),
+            value: schemas,
             writable: false
         }
 
