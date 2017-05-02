@@ -96,21 +96,7 @@ function Controllers() {
             const options = getNormalizedSchemaConfiguration(this);
             protect.hash = crypto
                 .createHash('sha256')
-                .update(Object.keys(options)
-                    .map(key => {
-                        const value = options[key];
-                        switch (typeof value) {
-                            case 'function':
-                            case 'symbol':
-                                return value.toString();
-                            case 'object':
-                                return JSON.stringify(value);
-                            default:
-                                return value;
-                        }
-                    })
-                    .join('')
-                )
+                .update(JSON.stringify(prepareForHash(options)))
                 .digest('hex');
 
             // store the protected data
@@ -277,4 +263,26 @@ function getNormalizedSchemaConfiguration(obj) {
             prev[key] = obj[key];
             return prev;
         }, {});
+}
+
+function prepareForHash(value) {
+    if (Array.isArray(value)) {
+        return value.map(prepareForHash);
+    } else if (value && typeof value === 'object') {
+        const result = {};
+        const keys = Object.keys(value);
+        keys.sort();
+        keys.forEach(function(key) {
+            result[key] = prepareForHash(value[key]);
+        });
+        return result;
+    } else {
+        switch (typeof value) {
+            case 'function':
+            case 'symbol':
+                return value.toString();
+            default:
+                return value;
+        }
+    }
 }
