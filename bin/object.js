@@ -125,20 +125,15 @@ function TypedObject (config) {
                     options.oneOf = array;
                     options.type = 'one-of';
                 }
+            } else if (optionsIsNotOneOf) {
+                extend(options);
+            } else {
+                options.oneOf.forEach(item => extend(item));
             }
 
             // create a schema instance for each property
             const schema = Schema(options);
             object.properties[key] = schema;
-
-            // add required property back onto the schema (it was stripped off by controllers during schema construction)
-            if (schemaIsNotOneOf && optionsIsNotOneOf) {
-                schema.required = options.required || false;
-            } else {
-                schema.oneOf.forEach((item, index) => {
-                    item.required = options.oneOf[index].required || false;
-                });
-            }
 
             // validate that not required and has default
             validateSchemaConfiguration(key, schema);
@@ -246,24 +241,15 @@ TypedObject.errors = {
 
 
 
-function mergeSchemas(general, specific) {
-    return Object.assign({}, general, specific || {});
-    /*
-    const merged = Object.assign({}, general, specific || {});
-    merged.__ = {
-        properties: {
-            required: {
-                value: !!merged.required
-            }
-        }/!*,
-        error: function(value, prefix) {
-            return;
-        },
-        normalize: function(value) {
+function extend(obj) {
+    if (!obj._extension_ || typeof obj._extension_ !== 'object') obj._extension_ = {};
+    obj._extension_.required = !!obj.required;
+}
 
-        }*!/
-    };
-    return merged;*/
+function mergeSchemas(general, specific) {
+    const merged = Object.assign({}, general, specific);
+    extend(merged);
+    return merged;
 }
 
 function validateSchemaConfiguration (key, schema) {

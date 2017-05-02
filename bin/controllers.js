@@ -78,14 +78,18 @@ function Controllers() {
          */
         function Schema(config, schema) {
             const length = ctrls.length;
-            const extended = config.hasOwnProperty('__') ? config.__ : {};
             this.Schema = schema;
 
             // apply controllers to this schema
             for (let i = 0; i < length; i++) ctrls[i].call(this, config);
 
             // add additional properties
-            if (util.isPlainObject(extended.properties)) Object.defineProperties(this, extended.properties);
+            if (config._extension_ && typeof config._extension_ === 'object') {
+                const self = this;
+                Object.keys(config._extension_).forEach(function(key) {
+                    self[key] = config._extension_[key];
+                });
+            }
 
             // create a hash
             const protect = {};
@@ -95,9 +99,15 @@ function Controllers() {
                 .update(Object.keys(options)
                     .map(key => {
                         const value = options[key];
-                        if (typeof value === 'function') return value.toString();
-                        if (typeof value === 'object') return JSON.stringify(value);
-                        return value;
+                        switch (typeof value) {
+                            case 'function':
+                            case 'symbol':
+                                return value.toString();
+                            case 'object':
+                                return JSON.stringify(value);
+                            default:
+                                return value;
+                        }
                     })
                     .join('')
                 )
