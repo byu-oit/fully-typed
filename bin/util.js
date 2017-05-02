@@ -96,15 +96,7 @@ exports.isPlainObject = function (value) {
 };
 
 exports.isValidSchemaConfiguration = function(value) {
-    if (Array.isArray(value)) {
-        const length = value.length;
-        for (let i = 0; i < length; i++) {
-            if (!exports.isPlainObject(value[i])) return false;
-        }
-        return true;
-    } else {
-        return exports.isPlainObject(value);
-    }
+    return exports.isPlainObject(value);
 };
 
 exports.propertyErrorMessage = function (property, actual, expected) {
