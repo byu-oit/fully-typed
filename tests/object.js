@@ -36,15 +36,9 @@ describe('TypedObject', () => {
             expect(() => Schema({ type: Object, properties: properties })).not.to.throw(Error);
         });
 
-        it('properties can be an array of plain objects', () => {
-            const properties = [{}];
-            expect(() => Schema({ type: Object, properties: properties })).not.to.throw(Error);
-        });
-
-        it('properties cannot be an array with a non plain objects', () => {
-            const properties = [null];
-            const e = util.extractError(() => Schema({ type: Object, properties: properties }));
-            expect(e.code).to.equal(util.errors.config.code);
+        it('properties cannot be an array', () => {
+            const properties = [];
+            expect(() => Schema({ type: Object, properties: properties })).to.throw(Error);
         });
 
         it('property cannot be number', () => {
@@ -189,7 +183,7 @@ describe('TypedObject', () => {
 
             });
 
-            describe('plain specific and array general', () => {
+            describe('plain specific and one-of general', () => {
                 let o;
 
                 before(() => {
@@ -206,29 +200,34 @@ describe('TypedObject', () => {
                                 required: false
                             }
                         },
-                        schema: [{
-                            type: Boolean,
-                            required: true
-                        }]
+                        schema: {
+                            type: 'one-of',
+                            oneOf: [
+                                {
+                                    type: Boolean,
+                                    required: true
+                                }
+                            ]
+                        }
                     });
                 });
 
                 it('a', () => {
-                    expect(o.properties.a.schemas[0].type).to.equal(String);
-                    expect(o.properties.a.schemas[0].required).to.be.true;
-                    expect(o.properties.a.schemas.length).to.equal(1);
+                    expect(o.properties.a.oneOf[0].type).to.equal(String);
+                    expect(o.properties.a.oneOf[0].required).to.be.true;
+                    expect(o.properties.a.oneOf.length).to.equal(1);
                 });
 
                 it('b', () => {
-                    expect(o.properties.b.schemas[0].type).to.equal(Number);
-                    expect(o.properties.b.schemas[0].required).to.be.true;
-                    expect(o.properties.b.schemas.length).to.equal(1);
+                    expect(o.properties.b.oneOf[0].type).to.equal(Number);
+                    expect(o.properties.b.oneOf[0].required).to.be.true;
+                    expect(o.properties.b.oneOf.length).to.equal(1);
                 });
 
                 it('c', () => {
-                    expect(o.properties.c.schemas[0].type).to.equal(Boolean);
-                    expect(o.properties.c.schemas[0].required).to.be.false;
-                    expect(o.properties.c.schemas.length).to.equal(1);
+                    expect(o.properties.c.oneOf[0].type).to.equal(Boolean);
+                    expect(o.properties.c.oneOf[0].required).to.be.false;
+                    expect(o.properties.c.oneOf.length).to.equal(1);
                 });
 
             });
@@ -240,15 +239,18 @@ describe('TypedObject', () => {
                     o = Schema({
                         type: Object,
                         properties: {
-                            a: [
-                                {
-                                    type: String
-                                },
-                                {
-                                    type: Number,
-                                    required: false
-                                }
-                            ]
+                            a: {
+                                type: Schema.OneOf,
+                                oneOf: [
+                                    {
+                                        type: String
+                                    },
+                                    {
+                                        type: Number,
+                                        required: false
+                                    }
+                                ]
+                            }
                         },
                         schema: {
                             type: Boolean,
@@ -258,17 +260,17 @@ describe('TypedObject', () => {
                 });
 
                 it('has 2 distinct configurations', () => {
-                    expect(o.properties.a.schemas.length).to.equal(2);
+                    expect(o.properties.a.oneOf.length).to.equal(2);
                 });
 
                 it('a[0]', () => {
-                    expect(o.properties.a.schemas[0].type).to.equal(String);
-                    expect(o.properties.a.schemas[0].required).to.be.true;
+                    expect(o.properties.a.oneOf[0].type).to.equal(String);
+                    expect(o.properties.a.oneOf[0].required).to.be.true;
                 });
 
                 it('a[1]', () => {
-                    expect(o.properties.a.schemas[1].type).to.equal(Number);
-                    expect(o.properties.a.schemas[1].required).to.be.false;
+                    expect(o.properties.a.oneOf[1].type).to.equal(Number);
+                    expect(o.properties.a.oneOf[1].required).to.be.false;
                 });
 
             });
@@ -280,64 +282,70 @@ describe('TypedObject', () => {
                     o = Schema({
                         type: Object,
                         properties: {
-                            a: [
+                            a: {
+                                type: Schema.OneOf,
+                                oneOf: [
+                                    {
+                                        type: String
+                                    },
+                                    {
+                                        type: Number
+                                    }
+                                ]
+                            }
+                        },
+                        schema: {
+                            type: Schema.OneOf,
+                            oneOf: [
                                 {
-                                    type: String
+                                    type: String,
+                                    required: true
                                 },
                                 {
                                     type: Number
+                                },
+                                {
+                                    min: 0
                                 }
                             ]
-                        },
-                        schema: [
-                            {
-                                type: String,
-                                required: true
-                            },
-                            {
-                                type: Number
-                            },
-                            {
-                                min: 0
-                            }
-                        ]
+                        }
                     });
                 });
 
 
                 // some combinations create the same configuration, there are 5 distinct configurations here
                 it('has 5 distinct configurations', () => {
-                    expect(o.properties.a.schemas.length).to.equal(5);
+                    expect(o.properties.a.oneOf.length).to.equal(5);
                 });
 
                 it('a[0]', () => {
-                    const s = o.properties.a.schemas[0];
+                    const s = o.properties.a.oneOf[0];
                     expect(s.type).to.equal(String);
                     expect(s.required).to.be.true;
                 });
 
                 it('a[1]', () => {
-                    const s = o.properties.a.schemas[1];
+                    const s = o.properties.a.oneOf[1];
                     expect(s.type).to.equal(String);
                     expect(s.required).to.be.false;
                 });
 
                 it('a[2]', () => {
-                    const s = o.properties.a.schemas[2];
+                    const s = o.properties.a.oneOf[2];
                     expect(s.type).to.equal(Number);
                     expect(s.required).to.be.true;
                     expect(s.min).to.be.NaN;
                 });
 
                 it('a[3]', () => {
-                    const s = o.properties.a.schemas[3];
+                    const s = o.properties.a.oneOf[3];
                     expect(s.type).to.equal(Number);
                     expect(s.required).to.be.false;
                     expect(s.min).to.be.NaN;
                 });
 
                 it('a[4]', () => {
-                    const s = o.properties.a.schemas[4];
+                    const s = o.properties.a.oneOf[4];
                     expect(s.type).to.equal(Number);
                     expect(s.required).to.be.false;
                     expect(s.min).to.equal(0);

@@ -131,18 +131,21 @@ describe('TypedArray', () => {
             // accepts number but rounds numbers greater than or equal to 10.1
             schema = Schema({
                 type: Array,
-                schema: [
-                    {
-                        type: Number,
-                        min: 10.1,
-                        transform: v => Math.round(v)
-                    },
-                    {
-                        type: Number,
-                        max: 10.1,
-                        exclusiveMax: true
-                    }
-                ]
+                schema: {
+                    type: 'one-of',
+                    oneOf: [
+                        {
+                            type: Number,
+                            min: 10.1,
+                            transform: v => Math.round(v)
+                        },
+                        {
+                            type: Number,
+                            max: 10.1,
+                            exclusiveMax: true
+                        }
+                    ]
+                }
             });
             value = schema.normalize([ 7.5, 10.1, 15.5 ]);
         });
