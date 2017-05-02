@@ -133,10 +133,10 @@ function TypedObject (config) {
 
             // add required property back onto the schema (it was stripped off by controllers during schema construction)
             if (schemaIsNotOneOf && optionsIsNotOneOf) {
-                schema.required = options.required;
+                schema.required = options.required || false;
             } else {
                 schema.oneOf.forEach((item, index) => {
-                    item.required = options.oneOf[index].required;
+                    item.required = options.oneOf[index].required || false;
                 });
             }
 
