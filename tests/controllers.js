@@ -18,8 +18,7 @@
 const controllers       = require('../bin/controllers');
 const expect            = require('chai').expect;
 
-describe('controllers', () => {
-    function noop() {}
+describe.only('controllers', () => {
     let ctrl;
 
     beforeEach(() => {
@@ -27,60 +26,57 @@ describe('controllers', () => {
     });
 
     it('can define', () => {
+        const foo = makeController('foo', ['foo'], []);
         expect(ctrl.get('foo')).to.be.null;
-        ctrl.define(['foo'], noop);
+        ctrl.register(foo);
         expect(ctrl.get('foo')).not.to.be.null;
     });
 
-    it('inherit cannot be string', () => {
-        expect(() => ctrl.define(['foo'], noop, 'bar')).to.throw(Error);
-    });
-
-    it('inherit cannot use non-existing', () => {
-        expect(() => ctrl.define(['foo'], noop, ['bar'])).to.throw(Error);
-    });
-
-    it('inherit can be array of string', () => {
-        ctrl.define(['foo'], noop);
-        ctrl.define(['bar'], noop, ['foo']);
-    });
-
-    it('can have multiple names', () => {
+    it('can have multiple aliases', () => {
         const o = {};
-        ctrl.define(['foo', 'bar', o], noop);
+        const foo = makeController('foo', ['foo', 'bar', o], []);
+        ctrl.register(foo);
         expect(ctrl.get('foo')).not.to.be.null;
         expect(ctrl.get('bar')).not.to.be.null;
         expect(ctrl.get(o)).not.to.be.null;
     });
 
     it('can get list of controllers', () => {
-        ctrl.define(['foo'], noop);
-        ctrl.define(['bar', 'baz'], noop, ['foo']);
+        const foo = makeController('foo', ['foo'], []);
+        const bar = makeController('bar', ['bar'], ['foo']);
+        ctrl.register(foo);
+        ctrl.register(bar);
         const items = ctrl.list();
         expect(items.length).to.equal(2);
     });
 
     it('has checks existence', () => {
         expect(ctrl.has('foo')).to.be.false;
-        ctrl.define(['foo'], noop);
+        const foo = makeController('foo', ['foo'], []);
+        ctrl.register(foo);
         expect(ctrl.has('foo')).to.be.true;
     });
 
     it('can delete', () => {
-        ctrl.define(['foo'], noop);
+        const foo = makeController('foo', ['foo'], []);
+        ctrl.register(foo);
         expect(() => ctrl.delete('foo')).not.to.throw(Error);
         expect(ctrl.has('foo')).to.be.false;
     });
 
     it('cannot delete dependency', () => {
-        ctrl.define(['foo'], noop);
-        ctrl.define(['bar'], noop, ['foo']);
+        const foo = makeController('foo', ['foo'], []);
+        const bar = makeController('bar', ['bar'], ['foo']);
+        ctrl.register(foo);
+        ctrl.register(bar);
         expect(() => ctrl.delete('foo')).to.throw(Error);
     });
 
     it('deleting a dependent removes dependency', () => {
-        ctrl.define(['foo'], noop);
-        ctrl.define(['bar'], noop, ['foo']);
+        const foo = makeController('foo', ['foo'], []);
+        const bar = makeController('bar', ['bar'], ['foo']);
+        ctrl.register(foo);
+        ctrl.register(bar);
         expect(() => ctrl.delete('bar')).not.to.throw(Error);
         expect(() => ctrl.delete('foo')).not.to.throw(Error);
         expect(ctrl.has('bar')).to.be.false;
@@ -88,3 +84,13 @@ describe('controllers', () => {
     });
 
 });
+
+function makeController(name, aliases, dependencies) {
+    let x;
+    eval("x = function " + name + "() {}");
+    x.register = {
+        aliases: aliases,
+        dependencies: dependencies
+    };
+    return x;
+}
