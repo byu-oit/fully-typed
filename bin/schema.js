@@ -21,6 +21,8 @@ const util              = require('./util');
 
 const instances = new WeakMap();
 
+module.exports = Schema;
+
 /**
  * Create a schema instance.
  * @param {Object} config The configuration for the schema.
