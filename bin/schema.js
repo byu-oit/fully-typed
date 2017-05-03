@@ -24,7 +24,7 @@ const instances = new WeakMap();
 /**
  * Create a schema instance.
  * @param {Object} config The configuration for the schema.
- * @param {{ alias: string, aliases: *[], controller: Function, controllers: Function[], errorFunctions: Function[], dependencies: *[], normalizeFunctions: Function[] }} data
+ * @param {ControllerData} data
  * @constructor
  */
 function Schema(config, data) {
@@ -129,7 +129,6 @@ Schema.prototype.validate = function(value, prefix) {
 
 function getNormalizedSchemaConfiguration(obj) {
     return Object.getOwnPropertyNames(obj)
-        .filter(k => k !== 'Schema')
         .reduce((prev, key) => {
             prev[key] = obj[key];
             return prev;
