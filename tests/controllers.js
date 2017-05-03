@@ -18,7 +18,7 @@
 const controllers       = require('../bin/controllers');
 const expect            = require('chai').expect;
 
-describe.only('controllers', () => {
+describe('controllers', () => {
     let ctrl;
 
     beforeEach(() => {
