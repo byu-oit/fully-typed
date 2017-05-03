@@ -172,6 +172,11 @@ function Controllers() {
             dependencies: inherits,
             normalizeFunctions: normalizeFunctions
         };
+        Object.freeze(data.aliases);
+        Object.freeze(data.controllers);
+        Object.freeze(data.errorFunctions);
+        Object.freeze(data.dependencies);
+        Object.freeze(data.normalizeFunctions);
 
         // store data for each alias
         aliases.forEach(alias => store.set(alias, data));
