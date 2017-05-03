@@ -53,8 +53,8 @@ function Controllers() {
             }
 
             data.aliases.forEach(alias => store.delete(alias));
-            data.inherits.forEach(inherit => {
-                const key = store.get(inherit);
+            data.dependencies.forEach(dependency => {
+                const key = store.get(dependency);
                 const items = dependencies.get(key);
                 if (items) {
                     const index = items.indexOf(data);
