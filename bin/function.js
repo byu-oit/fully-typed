@@ -118,3 +118,8 @@ TypedFunction.errors = {
         summary: 'The function must be named.'
     },
 };
+
+TypedFunction.register = {
+    aliases: ['function', Function],
+    dependencies: ['typed']
+};

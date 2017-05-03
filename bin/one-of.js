@@ -15,6 +15,7 @@
  *    limitations under the License.
  **/
 'use strict';
+const FullyTyped            = require('./fully-typed');
 const util                  = require('./util');
 
 module.exports = TypedOneOf;
@@ -95,4 +96,9 @@ TypedOneOf.errors = {
         explanation: 'None of the possible schemas matched the value.',
         summary: 'No matching schema found.'
     }
+};
+
+TypedOneOf.register = {
+    aliases: ['one-of', FullyTyped.OneOf],
+    dependencies: ['typed']
 };

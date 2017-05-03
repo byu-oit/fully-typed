@@ -148,3 +148,8 @@ TypedNumber.errors = {
         summary: 'Number too small.'
     }
 };
+
+TypedNumber.register = {
+    aliases: ['number', Number],
+    dependencies: ['typed']
+};

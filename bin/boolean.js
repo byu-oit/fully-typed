@@ -63,3 +63,8 @@ TypedBoolean.prototype.normalize = function (value) {
 TypedBoolean.errors = {
 
 };
+
+TypedBoolean.register = {
+    aliases: ['boolean', Boolean],
+    dependencies: ['typed']
+};

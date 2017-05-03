@@ -44,3 +44,8 @@ TypedSymbol.prototype.error = function (value, prefix) {
 TypedSymbol.errors = {
 
 };
+
+TypedSymbol.register = {
+    aliases: ['symbol', Symbol],
+    dependencies: ['typed']
+};

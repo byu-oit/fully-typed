@@ -15,6 +15,7 @@
  *    limitations under the License.
  **/
 'use strict';
+const FullyTyped        = require('./fully-typed');
 const util              = require('./util');
 
 module.exports = Typed;
@@ -188,4 +189,9 @@ Typed.errors = {
         explanation: 'The value was run through the validate function supplied in the configuration and did not pass.',
         summary: 'Did not pass validation.'
     }
+};
+
+Typed.register = {
+    aliases: ['typed', FullyTyped.Typed],
+    dependencies: []
 };

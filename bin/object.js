@@ -238,6 +238,11 @@ TypedObject.errors = {
     }
 };
 
+TypedObject.register = {
+    aliases: ['object', Object],
+    dependencies: ['typed']
+};
+
 
 
 

@@ -130,3 +130,8 @@ TypedString.errors = {
         summary: 'String does not match pattern.'
     }
 };
+
+TypedString.register = {
+    aliases: ['string', String],
+    dependencies: ['typed']
+};

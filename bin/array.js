@@ -177,3 +177,8 @@ TypedArray.errors = {
         summary: 'Array items must be unique.'
     }
 };
+
+TypedArray.register = {
+    aliases: ['array', Array],
+    dependencies: ['typed']
+};
