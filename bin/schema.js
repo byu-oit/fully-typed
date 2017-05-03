@@ -1,6 +1,6 @@
 /**
  *  @license
- *    Copyright 2017 Brigham Young University
+ *    Copyright 2016 Brigham Young University
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -16,41 +16,148 @@
  **/
 'use strict';
 const crypto            = require('crypto');
+const FullyTyped        = require('./fully-typed');
 const util              = require('./util');
 
-module.exports = Schema;
+const instances = new WeakMap();
 
 /**
- * Get a typed schema.
- * @param {object, object[]} [configuration={}]
- * @returns {{ error: Function, normalize: Function, validate: Function }}
+ * Create a schema instance.
+ * @param {Object} config The configuration for the schema.
+ * @param {{ alias: string, aliases: *[], controller: Function, controllers: Function[], errorFunctions: Function[], dependencies: *[], normalizeFunctions: Function[] }} data
+ * @constructor
  */
-function Schema (configuration) {
-    if (arguments.length === 0 || configuration === null) configuration = {};
+function Schema(config, data) {
+    const controllers = data.controllers;
 
-    // validate input parameter
-    if (!util.isPlainObject(configuration)) {
-        const err = Error('If provided, the schema configuration must be a plain object. Received: ' + configuration);
-        util.throwWithMeta(err, exports.errors.config);
+    const length = controllers.length;
+    this.Schema = FullyTyped;
+
+    // apply controllers to this schema
+    for (let i = 0; i < length; i++) controllers[i].call(this, config);
+
+    // add additional properties
+    if (config._extension_ && typeof config._extension_ === 'object') {
+        const self = this;
+        Object.keys(config._extension_).forEach(function(key) {
+            self[key] = config._extension_[key];
+        });
     }
 
-    // get a copy of the configuration
-    const config = util.copy(configuration || {});
+    // store protected data with schema
+    const protect = Object.assign({}, data);
 
-    // if type is not specified then use the default
-    if (!config.type) config.type = 'typed';
-
-    // get the controller item
-    const item = Schema.controllers.get(config.type);
-
-    // type is invalid
-    if (!item) {
-        const err = Error('Unknown type: ' + config.type);
-        util.throwWithMeta(err, util.errors.config);
-    }
-
-    // return a schema object
-    return new item.Schema(config, Schema);
+    // create and store hash
+    const options = getNormalizedSchemaConfiguration(this);
+    protect.hash = crypto
+        .createHash('sha256')
+        .update(JSON.stringify(prepareForHash(options)))
+        .digest('hex');
+    instances.set(this, protect);
 }
 
-Schema.controllers = require('./controllers')();
+/**
+ * Check if a value produces any errors.
+ * @param {*} value
+ * @param {string} [prefix='']
+ * @returns {string,null}
+ */
+Schema.prototype.error = function(value, prefix) {
+    validateContext(this);
+    const errorFunctions = instances.get(this).errorFunctions;
+    if (!prefix) prefix = '';
+    const length = errorFunctions.length;
+    for (let i = 0; i < length; i++) {
+        const err = errorFunctions[i].call(this, value, prefix);
+        if (err) return err;
+    }
+    return null;
+};
+
+/**
+ * Get the configuration hash.
+ * @returns {string}
+ */
+Schema.prototype.hash = function() {
+    validateContext(this);
+    return instances.get(this).hash;
+};
+
+/**
+ * Validate then normalize a value.
+ * @param {*} value
+ * @returns {*}
+ */
+Schema.prototype.normalize = function(value) {
+    validateContext(this);
+    const normalizeFunctions = instances.get(this).normalizeFunctions;
+    if (typeof value === 'undefined' && this.hasDefault) value = this.default;
+    this.validate(value, '');
+    const length = normalizeFunctions.length;
+    for (let i = 0; i < length; i++) {
+        value = normalizeFunctions[i].call(this, value);
+    }
+    return value;
+};
+
+/**
+ * Convert the schema to JSON
+ * @returns {Object}
+ */
+Schema.prototype.toJSON = function() {
+    validateContext(this);
+    const options = getNormalizedSchemaConfiguration(this);
+    if (typeof options.type === 'function') options.type = options.type.name || this.alias || 'anonymous';
+    return options;
+};
+
+/**
+ * Validate a value against the schema and throw an error if encountered.
+ * @param {*} value
+ * @param {string} [prefix='']
+ */
+Schema.prototype.validate = function(value, prefix) {
+    validateContext(this);
+    const o = this.error(value, prefix);
+    if (o) {
+        const err = Error(o.message);
+        util.throwWithMeta(err, o);
+    }
+};
+
+
+
+function getNormalizedSchemaConfiguration(obj) {
+    return Object.getOwnPropertyNames(obj)
+        .filter(k => k !== 'Schema')
+        .reduce((prev, key) => {
+            prev[key] = obj[key];
+            return prev;
+        }, {});
+}
+
+function prepareForHash(value) {
+    if (Array.isArray(value)) {
+        return value.map(prepareForHash);
+    } else if (value && typeof value === 'object') {
+        const result = {};
+        const keys = Object.keys(value);
+        keys.sort();
+        keys.forEach(function(key) {
+            result[key] = prepareForHash(value[key]);
+        });
+        return result;
+    } else {
+        switch (typeof value) {
+            case 'function':
+            case 'symbol':
+                return value.toString();
+            default:
+                return value;
+        }
+    }
+}
+
+function validateContext(context) {
+    if (!instances.has(context)) throw Error('Invalid context for prototype method.');
+}
