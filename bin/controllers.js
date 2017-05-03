@@ -34,7 +34,6 @@ function Controllers() {
     const factory = Object.create(Controllers.prototype);
     const store = new Map();
     const dependencies = new Map();
-    const instances = new WeakMap();
 
     /**
      * Delete a registered schema controller. If it cannot be deleted due to this being a dependency for other controllers
@@ -47,15 +46,9 @@ function Controllers() {
             const data = store.get(alias);
             const items = dependencies.get(data);
             if (items && items.length > 0) {
-                const err = Error('Cannot delete controller definition due to dependencies on this definition.');
-                err.dependencies = items.map(v => {
-                    return {
-                        aliases: v.aliases.slice(0),
-                        controller: v.controller,
-                        inherits: v.inherits.slice(0),
-                        Schema: v.Schema
-                    };
-                });
+                const names = items.map(v => v.alias);
+                const err = Error('Cannot delete controller definition due to dependencies on this definition: ' + names.join(', '));
+                err.dependencies = items;
                 throw err;
             }
 
@@ -171,7 +164,9 @@ function Controllers() {
 
         // create data object to store
         const data = {
-            alias: aliases.filter(a => typeof a === 'string')[0],
+            alias: aliases
+                .map(a => typeof a === 'function' ? a.name : a)
+                .filter(a => typeof a === 'string' && a.length > 0)[0] || 'undefined',
             aliases: aliases,
             controller: controller,
             controllers: controllers,
