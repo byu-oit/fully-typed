@@ -15,6 +15,7 @@
  *    limitations under the License.
  **/
 'use strict';
+const FullyTyped            = require('./fully-typed');
 const util                  = require('./util');
 
 module.exports = TypedObject;
@@ -28,7 +29,6 @@ module.exports = TypedObject;
  */
 function TypedObject (config) {
     const object = this;
-    const Schema = this.Schema;
     const allowNull = config.hasOwnProperty('allowNull') ? !!config.allowNull : true;
     const hasProperties = config.hasOwnProperty('properties');
 
@@ -47,7 +47,7 @@ function TypedObject (config) {
         validateSchemaConfiguration('schema', config.schema);
     }
 
-    const schemaIsNotOneOf = config.hasOwnProperty('schema') ? !Schema.controllers.is('one-of', config.schema.type) : true;
+    const schemaIsNotOneOf = config.hasOwnProperty('schema') ? !FullyTyped.controllers.is('one-of', config.schema.type) : true;
 
     Object.defineProperties(object, {
 
@@ -87,7 +87,7 @@ function TypedObject (config) {
              * @name TypedObject#schema
              * @type {object, undefined}
              */
-            value: config.schema ? Schema(mergeSchemas(config.schema)) : undefined,
+            value: config.schema ? FullyTyped(mergeSchemas(config.schema)) : undefined,
             writable: false
         }
 
@@ -97,7 +97,7 @@ function TypedObject (config) {
     Object.keys(object.properties)
         .forEach(function(key) {
             let options = object.properties[key] || {};
-            const optionsIsNotOneOf = !Schema.controllers.is('one-of', options.type);
+            const optionsIsNotOneOf = !FullyTyped.controllers.is('one-of', options.type);
 
             if (!util.isValidSchemaConfiguration(options)) {
                 const err = Error('Invalid configuration for property: ' + key + '. Must be a plain object.');
@@ -132,7 +132,7 @@ function TypedObject (config) {
             }
 
             // create a schema instance for each property
-            const schema = Schema(options);
+            const schema = FullyTyped(options);
             object.properties[key] = schema;
 
             // validate that not required and has default

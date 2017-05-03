@@ -29,7 +29,6 @@ module.exports = TypedOneOf;
  */
 function TypedOneOf (config) {
     const oneOf = this;
-    const Schema = this.Schema;
 
     // validate oneOf
     if (!config.hasOwnProperty('oneOf')) {
@@ -44,7 +43,7 @@ function TypedOneOf (config) {
     // create each unique schema
     const hashes = {};
     const schemas = config.oneOf
-        .map(item => Schema(item))
+        .map(item => FullyTyped(item))
         .filter(schema => {
             const hash = schema.hash();
             if (hashes[hash]) return false;

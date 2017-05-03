@@ -31,9 +31,9 @@ module.exports = Schema;
  */
 function Schema(config, data) {
     const controllers = data.controllers;
-
     const length = controllers.length;
-    this.Schema = FullyTyped;
+
+    this.FullyTyped = FullyTyped;
 
     // apply controllers to this schema
     for (let i = 0; i < length; i++) controllers[i].call(this, config);

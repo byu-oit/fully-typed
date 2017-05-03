@@ -15,6 +15,7 @@
  *    limitations under the License.
  **/
 'use strict';
+const FullyTyped            = require('./fully-typed');
 const util                  = require('./util');
 
 module.exports = TypedArray;
@@ -28,7 +29,6 @@ module.exports = TypedArray;
  */
 function TypedArray (config) {
     const array = this;
-    const Schema = this.Schema;
 
     // validate min items
     if (config.hasOwnProperty('minItems') && (!util.isInteger(config.minItems) || config.minItems < 0)) {
@@ -44,7 +44,7 @@ function TypedArray (config) {
     }
 
     // validate schema
-    if (config.hasOwnProperty('schema')) config.schema = Schema(config.schema);
+    if (config.hasOwnProperty('schema')) config.schema = FullyTyped(config.schema);
 
     // define properties
     Object.defineProperties(array, {
