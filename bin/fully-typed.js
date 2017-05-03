@@ -54,3 +54,6 @@ function FullyTyped (configuration) {
 }
 
 FullyTyped.controllers = require('./controllers')();
+
+FullyTyped.OneOf = Symbol('one-of');
+FullyTyped.Typed = Symbol('typed');
