@@ -7,8 +7,9 @@
     "test": "tests"
   },
   "scripts": {
-    "coverage": "nyc mocha tests",
-    "test": "mocha tests"
+    "test": "mocha tests/*.js",
+    "coverage": "nyc --reporter=html mocha tests/*.js",
+    "coverage:report": "nyc mocha tests/*.js && nyc report --reporter=text-lcov | coveralls"
   },
   "keywords": [
     "fully-typed",
