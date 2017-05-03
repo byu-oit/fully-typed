@@ -57,7 +57,7 @@ function Controllers() {
                 const key = store.get(dependency);
                 const items = dependencies.get(key);
                 const index = items.indexOf(data);
-                if (index !== -1) items.splice(index, 1);
+                items.splice(index, 1);
                 if (items.length === 0) dependencies.delete(key);
             });
         }
