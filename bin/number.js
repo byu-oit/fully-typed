@@ -151,5 +151,5 @@ TypedNumber.errors = {
 
 TypedNumber.register = {
     aliases: ['number', Number],
-    dependencies: ['typed']
+    dependencies: []
 };

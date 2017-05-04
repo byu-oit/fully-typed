@@ -133,5 +133,5 @@ TypedString.errors = {
 
 TypedString.register = {
     aliases: ['string', String],
-    dependencies: ['typed']
+    dependencies: []
 };

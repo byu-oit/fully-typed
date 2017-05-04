@@ -99,5 +99,5 @@ TypedOneOf.errors = {
 
 TypedOneOf.register = {
     aliases: ['one-of', FullyTyped.OneOf],
-    dependencies: ['typed']
+    dependencies: []
 };

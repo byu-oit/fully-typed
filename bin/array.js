@@ -180,5 +180,5 @@ TypedArray.errors = {
 
 TypedArray.register = {
     aliases: ['array', Array],
-    dependencies: ['typed']
+    dependencies: []
 };

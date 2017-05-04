@@ -121,5 +121,5 @@ TypedFunction.errors = {
 
 TypedFunction.register = {
     aliases: ['function', Function],
-    dependencies: ['typed']
+    dependencies: []
 };

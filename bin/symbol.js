@@ -47,5 +47,5 @@ TypedSymbol.errors = {
 
 TypedSymbol.register = {
     aliases: ['symbol', Symbol],
-    dependencies: ['typed']
+    dependencies: []
 };
