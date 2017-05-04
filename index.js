@@ -20,6 +20,6 @@ const register          = FullyTyped.controllers.register;
 
 module.exports = FullyTyped;
 
-['typed', 'array', 'boolean', 'function', 'number', 'object', 'one-of', 'string', 'symbol'].forEach(key => {
+['array', 'boolean', 'function', 'number', 'object', 'one-of', 'string', 'symbol'].forEach(key => {
     register(require('./bin/' + key));
 });
