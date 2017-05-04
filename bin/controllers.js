@@ -16,6 +16,7 @@
  **/
 'use strict';
 const crypto            = require('crypto');
+const Typed             = require('./typed');
 const util              = require('./util');
 
 /**
@@ -143,18 +144,20 @@ function Controllers() {
             if (!store.has(dependency)) throw Error('Controller dependency not defined: ' + dependency);
         });
 
-        const controllers = [];
-        const errorFunctions = [];
-        const normalizeFunctions = [];
+        const controllers = [ Typed ];
+        const errorFunctions = [ Typed.prototype.error ];
+        const normalizeFunctions = [ Typed.prototype.normalize ];
 
         // build controllers and inheritance arrays
         inherits.forEach(function(dependency) {
             const ctrl = store.get(dependency).controller;
             const proto = ctrl.prototype;
 
-            controllers.push(ctrl);
-            if (proto.hasOwnProperty('error')) errorFunctions.push(proto.error);
-            if (proto.hasOwnProperty('normalize')) normalizeFunctions.push(proto.normalize);
+            if (ctrl !== Typed) {
+                controllers.push(ctrl);
+                if (proto.hasOwnProperty('error')) errorFunctions.push(proto.error);
+                if (proto.hasOwnProperty('normalize')) normalizeFunctions.push(proto.normalize);
+            }
         });
         controllers.push(controller);
         if (controller.prototype.hasOwnProperty('error')) errorFunctions.push(controller.prototype.error);
