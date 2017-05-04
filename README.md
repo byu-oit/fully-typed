@@ -98,6 +98,7 @@ positiveIntegerSchema.normalize(-1);       // validate will run prior to normali
     - [Shared Configuration Options](#shared-configuration-options)
     - [Array](#array)
     - [Boolean](#boolean)
+    - [Date](#date)
     - [Function](#function)
     - [Number](#number)
     - [Object](#object)
@@ -109,19 +110,24 @@ positiveIntegerSchema.normalize(-1);       // validate will run prior to normali
     - [normalize](#normalize)
     - [validate](#validate)
 - [Plugins](#plugins)
+    - [Use an Existing Plugin](#use-an-existing-plugin)
     - [Write a Plugin](#write-a-plugin)
-    - [Add a Plugin](#add-a-plugin)
+- [Controller API](#controller-api)
+    - [register](#register)
+    - [delete](#delete)
+    - [get](#get)
+    - [has](#has)
+    - [is](#is)
+    - [list](#list)
 
 
 ## Schema Configurations
 
 ### Shared Configuration Options
 
-All types defined in this library share the following common configuration options. Plugins may use these properties too if programmed to do so.
+All types defined share the following common configuration options:
 
-**Configuration Options**
-
-- *default* - A value to use during [normalization](#normalize) if the value is `undefined`. This is especially useful for [object configurations](#object).
+- *default* - A value to use during [normalization](#normalize) if the value is `undefined`. This is especially useful for the properties of [object configurations](#object).
 
     ```js
     const schema = Typed({
@@ -236,6 +242,38 @@ In addition to the [shared configuration options](#shared-configuration-options)
     strict.error(true);     // no errors
 
     const value = loose.normalize(1);   // value === true
+    ```
+    
+### Date
+
+A date type will require that the input be a valid Date or that it be a value that can be converted to a valid Date.
+
+Type Aliases: `'date'`, `Date`
+
+In addition to the [shared configuration options](#shared-configuration-options) it also has these options:
+
+- *max* - (Date, string, number) The maximum allowed date value. Defaults to `undefined`.
+
+    ```js
+    const schema = Typed({
+        type: Date,
+        max: '2017-01-01'
+    });
+
+    schema.error(new Date('2015-01-01'));         // no errors
+    schema.error(new Date('2017-02-01'));         // error
+    ```
+
+- *min* - (Date, string, number) The minimum allowed date value. Defaults to `undefined`.
+
+    ```js
+    const schema = Typed({
+        type: Date,
+        min: '2017-01-01'
+    });
+
+    schema.error(new Date('2017-02-01'));         // no errors
+    schema.error(new Date('2015-01-01'));         // error
     ```
 
 ### Function
@@ -672,166 +710,235 @@ schema.validate('a');   // throws an error
 
 ## Plugins
 
-[Browse Existing Plugins](https://www.npmjs.com/browse/keyword/fully-typed)
+The fully typed library can be extended with new types.
 
-The fully typed library can be extended with new types. To do this you need to complete two steps:
+### Use an Existing Plugin
 
-1. [Write the type's controller](#write-the-controller)
+1. [Find an Existing Plugin](https://www.npmjs.com/browse/keyword/fully-typed)
+ 
+2. Require the plugin in your project along with `fully-typed`.
 
-2. [Register the type's controller](#register-the-controller)
+3. Register the plugin with `fully-typed`.
+    
+    ```js
+    const FullyTyped = require('fully-typed');
+    const plugin = require('some-full-typed-plugin');
+    
+    FullyTyped.controllers.register(plugin);
+    ```
 
-**Important:** If you create a plugin and publish it to npm then be sure to add a keyword of `full-typed` to your package.json so that the plugin can easily be found.
+4. Now you can create schema's that use that plugin's type and associated configurations.
 
-### Write the Controller
+### Write a Plugin
+
+A plugin is created by defining a typed controller. [See the example](#typeddate-controller-example).
  
 1. Define a constructor function that accepts a configuration as it's only parameter.
 
-2. Validate the configuration properties that are important to your controller. (In this example we define max and min.)
-
-3. Define the controller's properties.
-
     ```js
-    // #1 - define controller constructor 
-    function TypedDate (config) {
-        
-        // #2 - validate configuration properties
-        if (config.hasOwnProperty('max') && !(config.max instanceof Date)) {
-            throw Error('Property max must be a Date object. Received: ' + config.max);
-        }        
-        if (config.hasOwnProperty('min') && !(config.min instanceof Date)) {
-            throw Error('Property min must be a Date object. Received: ' + config.min);
-        }        
-        if (config.hasOwnProperty('max') && config.hasOwnProperty('min') && +config.min > +config.max) {
-            throw Error('The max date value must be greater than or equal to the min date value.');
-        }        
-        
-        // #3 - define the controller properties
-        Object.defineProperties(this, {
-            max: {
-                value: config.hasOwnProperty('max') ? new Date(+config.max) : undefined
-            },
-            min: {
-                value: config.hasOwnProperty('min') ? new Date(+config.min) : undefined
-            },
-            startOfDay: {
-                value: !!config.startOfDay
-            }
-        });
-        
-    }
+    function MyController (config) { ... }
     ```
 
-4. Optionally define the error generator function. (This function will be used for normalization and validation.)
+2. Define and validate the configuration properties that are important to your controller.
+
+3. Define the controller's properties. These are often similar or derived from the configuration properties.
+
+4. Optionally define the error generator function on the prototype of the controller. This function will be used for normalization and validation. 
+
+    ```js
+    MyController.prototype.error = function (value, prefix) { ... }
+    ```
 
     This function will receive two parameters when called: 1) the value to validate, 2) a prefix to add to the beginning of any returned error messages.
 
     This function should return a string with an error message if an invalid value is passed in, otherwise it should return `null`.
-     
+    
+5. Optionally define the normalize function. This function will be called after passing validation and can make any transformations to the value. 
+
     ```js
-    // #4 - define the error generator function
-    TypedDate.prototype.error = function (value, prefix) {
-        
-        if (!(value instanceof Date)) {
-            return prefix + 'Value must be a date.';
-        }
-        
-        if (this.max !== undefined && this.max < value) {
-            return prefix + 'Date is above allowed max date.';
-        }
-        
-        if (this.min !== undefined && this.min > value) {
-            return prefix + 'Date is below allowed min date.';
-        }
-        
-        return null;
-    };
+    MyController.prototype.normalize = function (value) { ... }
     ```
-
-5. Optionally define the normalize function. This function will be called after passing validation and can make any transformations to the value.
-
+    
     This function receives the value parameter. It must return the normalized value.
+    
+6. Provide the registration directive. This tells `full-typed` what aliases to assign to your controller and what dependencies this controller has. All controllers will automatically inherit from the Typed core controller.
 
     ```js
-    // #5 - define the normalize function
-    TypedDate.prototype.normalize = function (value) {
-        const result = new Date(+value);
-        if (this.startOfDay) {
-            result.setHours(0);
-            result.setMinutes(0);
-            result.setSeconds(0);
-            result.setMilliseconds(0);
-        }
-        return result;
+    MyController.register = {
+        aliases: ['my-controller'],
+        dependencies: []
     }
     ```
+    
+    The alias can be any value (primitive or object) but each alias must be unique within the entire system of typed controllers. The dependencies can reference the typed controllers by any alias they are registered with.
+    
+7. Register your controller.
 
-### Register the Controller
+#### TypedDate Controller Example
 
-Whether you download someone else's controller or create your own you will still need to register the controller.
-
-```js
-const Typed             = require('fully-typed');
-const TypedDate         = require('fully-typed-date');
-
-// register the TypedDate controller under the 
-// type aliases: 'date' and Date. 
-// Also, it extends 'typed' controller.
-Typed.controllers.define(['date', Date], TypedDate, ['typed']);
-
-
-
-const Typed             = require('fully-typed');
-const TypedDate         = require('fully-typed-date');
-Typed.controllers.register(TypedDate);
-
-
-
-const Typed             = require('fully-typed');
-require('fully-typed-date')(Typed);
-
-```
-
-#### Schema.controllers.define
-
-**Parameters:**
-
-- *aliases* - An array of aliases that are used when defining schemas to identify the controller to use. Schemas can be any value and any type. For example, the predefined `String` schema has two aliases: `['string', String]'`.
-
-- *controller* - The controller to define.
-
-- *inherits* - An array of aliases whose configuration properties, validations, and normalizations should be inherited for this controller. For example, all type definitions for fully-typed inherit from `'typed'`.
-
-#### An Idea
-
-You may not want to ask the user's of your plugin to specify it's aliases and dependencies, but you do need to ask the user of your plugin to supply the Schema library to be used. Here's an alternative.
-
-Your module:
+This is one of the built in controllers, but here it is documented to help you create your own controllers / plugins.
 
 ```js
-const Truthy            = require('./truthy-controller');
+module.exports = TypedDate;
 
-module.exports = function (Typed) {
-    Typed.controllers.define(['truthy', Truthy], Truthy, ['typed']);
-    return Truthy;
+// #1 - Define the controller constructor
+function TypedDate (config) {
+    const max = toDate(config.max);
+    const min = toDate(config.min);
+
+    // #2 - define and validate configuration properties
+    if (config.hasOwnProperty('max') && !max) {
+        throw Error('Property max could not be converted to a valid date. Received: ' + config.max);
+    }
+    if (config.hasOwnProperty('min') && !min) {
+        throw Error('Property min could not be converted to a valid date. Received: ' + config.min);
+    }
+    if (max !== undefined && min !== undefined && min > max) {
+        throw Error('The max date value must be greater than or equal to the min date value.');
+    }
+
+    // #3 - define the controller's properties
+    Object.defineProperties(this, {
+        max: {
+            value: max
+        },
+        min: {
+            value: min
+        }
+    });
+}
+
+// #4 - Define the error generator function
+TypedDate.prototype.error = function(value, prefix) {
+    const d = toDate(value);
+    if (!d) return prefix + 'Value cannot be converted to a valid date: ' + value;
+    if (this.max && d > this.max) return prefix + 'Value must be less than or equal to the max date value.';
+    if (this.min && d < this.min) return prefix + 'Value must be greater than or equal to the min date value.';
+    return null;
+};
+
+// #5 - define the normalize function
+TypedDate.prototype.normalize = function(value) {
+    return toDate(value);
+};
+
+// #6 - define the registration directive
+TypedDate.register = {
+    aliases: ['date', Date],
+    dependencies: []
+};
+
+function toDate(value) {
+    const d = value instanceof Date
+        ? value
+        : new Date(value);
+    return isNaN(+d) ? undefined : d;
 }
 ```
 
-Their Code:
+Finally, we need to register the controller:
 
 ```js
-const Typed             = require('fully-typed');
-const Truthy            = require('truthy')(Typed);
+const FullyTyped = require('fully-typed');
+FullyTyped.controllers.register(TypedDate);
+```
 
-const schema = Typed({
-    type: Truthy,           // or 'truthy' since that is an alias too
-    notTruthy: ['false']    // string of 'false' added as non-truthy value
-});
+## Controller API
 
-function foo(param) {
-    schema.validate(param);
-    // do stuff
-};
+### Register
 
-foo('hello');       // runs successfully
-foo('false');       // throws an error stating: 'Value is not truthy: false'
+Register a controller with the typed system to enable use of the type. You will need this function if you are including types from other libraries or if you are writing your own typed controller.
+
+**Parameters**
+
+- *controller* - A valid controller function as defined in the [Write a Plugin](#write-a-plugin) section. 
+
+**Returns** undefined.
+
+```js
+Typed.controllers.register ( controller );
+```
+
+### Delete
+
+Delete an existing controller.
+
+**Parameters**
+
+- *alias* - An alias of the controller you want to delete. 
+
+**Returns** undefined.
+
+```js
+Typed.controllers.delete ('alias');
+```
+
+### Get
+
+Get an existing controllers data structure.
+
+**Parameters**
+
+- *alias* - An alias of the controller you want to get. 
+
+**Returns** null if not found, or an object with the following format:
+
+- *alias* - The primary alias name.
+
+- *aliases* - An array of all aliases.
+
+- *controller* - The primary controller function.
+
+- *controllers* - An array of all controllers (including dependency controllers) that make up the controller.
+
+- *errorFunctions* - An array of all error functions (including dependency error functions).
+
+- *dependencies* - Aliases for all dependencies for this controller. 
+
+- *normalizeFunctions* - An array of all normalize functions (including dependency error functions).
+
+```js
+const data = Typed.controllers.get ('alias');
+```
+
+### Has
+
+Check to see if a controller has been defined with the specified alias.
+
+**Parameters**
+
+- *alias* - An alias of the controller you check for. 
+
+**Returns** `true` if registered, `false` if not registered.
+
+```js
+Typed.controllers.has ('alias');
+```
+
+### Is
+
+Check to see if two aliases are referencing the same controller.
+
+**Parameters**
+
+- *alias1* - The first alias.
+
+- *alias2* - The second alias. 
+
+**Returns** `true` if both aliases are for the same controller, otherwise `false`.
+
+```js
+Typed.controllers.is ('alias1', 'alias2');
+```
+
+### List
+
+Get an array of all registered type controllers.
+
+**Parameters** None
+
+**Returns** an array of controller data objects.
+
+```js
+Typed.controllers.list ();
 ```
