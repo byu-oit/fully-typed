@@ -1,0 +1,51 @@
+--- 
+$schemaver: 1.1
+name: fully-typed
+type: Library
+aliases:
+short_description: Run time type validation, transformation, and error generator that works out of the box on primitives, objects, arrays, and nested objects. Also extensible for custom types.
+assignment_group: gro:AD-Miscellaneous Information Applications
+notes: 
+maintained_by:
+  - Gi60s
+developed_by_byu: True
+ddd:
+  business_domain: 
+  ubiquitous_language_url: 
+  context_map_url: 
+links:
+  system_documentation_url: https://github.com/byu-oit-appdev/fully-typed
+  source_repo_url: https://github.com/byu-oit-appdev/fully-typed
+  swagger_urls:
+microservice: False
+technologies_used:
+  - JavaScript
+stages:
+  production:
+    urls:
+      product_page: https://github.com/byu-oit-appdev/fully-typed
+      physical_url: 
+      virtual_url: 
+    hosting_location: 
+    aws_account: 
+    relationships: 
+      depends_on:
+        db_read_write:
+        db_read_only:
+        software:
+      supports:
+        software:
+        service:
+      reverse_proxy: 
+      runs_on:
+        server_cluster:
+        virtual_server:
+        rack_server:
+        blade_server:
+tags:
+  data-sensitivity: confidential
+  env: prd
+  app: fully-typed
+  team: gro:AD-Miscellaneous Information Applications
+federation_json_url: https://raw.githubusercontent.com/byu-oit-appdev/fully-typed/master/.repo-meta.yml
+
