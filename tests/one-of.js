@@ -22,6 +22,14 @@ const util              = require('../bin/util');
 
 describe('one of schemas', () => {
 
+    it('must have oneOf property', () => {
+        expect(() => Schema({ type: 'one-of' })).to.throw(/Missing required one-of property/);
+    });
+
+    it('oneOf property must be an array of objects', () => {
+        expect(() => Schema({ type: 'one-of', oneOf: ['foo'] })).to.throw(/Must be an array of schema configurations/);
+    });
+
     describe('string or number', () => {
         let schema;
 
