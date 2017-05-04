@@ -138,6 +138,19 @@ describe('TypedObject', () => {
             expect(() => Schema(config)).to.not.throw(Error);
         });
 
+        it('keeps extended schema properties', () => {
+            const o = Schema({
+                type: 'object',
+                properties: {
+                    a: {
+                        type: Object,
+                        _extension_: { foo: 'bar' }
+                    }
+                }
+            });
+            expect(o.properties.a.foo).to.equal('bar');
+        });
+
         describe('extends across properties', () => {
             let o;
 
@@ -371,6 +384,12 @@ describe('TypedObject', () => {
             expect(err.code).to.equal(util.errors.type.code);
         });
 
+        it('allow null', () => {
+            const o = Schema({ type: Object, allowNull: true });
+            const err = o.error(null);
+            expect(err).to.be.null;
+        });
+
         it('do not allow null', () => {
             const o = Schema({ type: Object, allowNull: false });
             const err = o.error(null);
@@ -421,9 +440,20 @@ describe('TypedObject', () => {
             expect(o.error({ foo: true })).not.to.be.null;
         });
 
+        it('multiple errors', () => {
+            const o = Schema({ type: Object, properties: { a: { required: true }, b: { required: true }} });
+            expect(o.error({})).to.match(/multiple errors/i);
+        });
+
     });
 
     describe('#normalize', () => {
+
+        it('null', () => {
+            const o = Schema({ type: Object, allowNull: true });
+            const v = o.normalize(null);
+            expect(v).to.be.null;
+        });
 
         it('can clean properties', () => {
             const o = Schema({ type: Object, clean: true, properties: { x: {}} });
