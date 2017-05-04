@@ -94,7 +94,7 @@ TypedFunction.prototype.error = function (value, prefix) {
     }
 
     if (typeof this.maxArguments !== 'undefined' && value.length > this.maxArguments) {
-        const expected = 'Expected the function to have at most ' + this.maxArguments + ' parameters.';
+        const expected = 'Expected the function to have at most ' + this.maxArguments + ' parameter' + (this.maxArguments !== 1 ? 's' : '') + '.';
         return util.errish(prefix + util.valueErrorMessage(value, expected), TypedFunction.errors.maxArguments);
     }
 
