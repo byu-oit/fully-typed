@@ -158,7 +158,7 @@ Typed.prototype.error = function(value, prefix) {
  * @param {*} value
  */
 Typed.prototype.normalize = function(value) {
-    if (this.hasDefault && typeof value === 'undefined') value = this.default;
+    // if (this.hasDefault && typeof value === 'undefined') value = this.default; - default applied by schema prior to validation
     return this.transform ? this.transform(value) : value;
 };
 
