@@ -162,20 +162,6 @@ Typed.prototype.normalize = function(value) {
     return this.transform ? this.transform(value) : value;
 };
 
-/**
- * This will be overwritten when defined as a schema.
- * @type {Object<string, Function>}
- */
-Typed.prototype.Schema = {};
-
-/**
- * If a value is not valid then throw an error.
- * @param {*} value A value to test.
- * @param {string} [prefix=''] A string to add to the beginning of any errors.
- * @throws {Error}
- */
-Typed.prototype.validate = function(value, prefix) {};
-
 Typed.errors = {
     config: util.errors.config,
     enum: {
