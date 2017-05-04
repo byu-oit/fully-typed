@@ -103,17 +103,6 @@ Schema.prototype.normalize = function(value) {
 };
 
 /**
- * Convert the schema to JSON
- * @returns {Object}
- */
-Schema.prototype.toJSON = function() {
-    validateContext(this);
-    const options = getNormalizedSchemaConfiguration(this);
-    if (typeof options.type === 'function') options.type = options.type.name || this.alias || 'anonymous';
-    return options;
-};
-
-/**
  * Validate a value against the schema and throw an error if encountered.
  * @param {*} value
  * @param {string} [prefix='']
