@@ -35,7 +35,7 @@ function FullyTyped (configuration) {
     }
 
     // get a copy of the configuration
-    const config = util.copy(configuration || {});
+    const config = util.copy(configuration);
 
     // if type is not specified then use the default
     if (!config.type) config.type = 'typed';
