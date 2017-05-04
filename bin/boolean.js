@@ -50,7 +50,7 @@ function TypedBoolean (config) {
 TypedBoolean.prototype.error = function (value, prefix) {
 
     if (this.strict && typeof value !== 'boolean') {
-        return util.errish(prefix + util.valueErrorMessage(value, 'Expected a boolean.'), util.errors.type);
+        return prefix + util.valueErrorMessage(value, 'Expected a boolean.');
     }
 
     return null;
@@ -58,10 +58,6 @@ TypedBoolean.prototype.error = function (value, prefix) {
 
 TypedBoolean.prototype.normalize = function (value) {
     return !!value;
-};
-
-TypedBoolean.errors = {
-
 };
 
 TypedBoolean.register = {

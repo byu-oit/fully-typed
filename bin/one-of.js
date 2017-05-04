@@ -16,7 +16,6 @@
  **/
 'use strict';
 const FullyTyped            = require('./fully-typed');
-const util                  = require('./util');
 
 module.exports = TypedOneOf;
 
@@ -32,12 +31,10 @@ function TypedOneOf (config) {
 
     // validate oneOf
     if (!config.hasOwnProperty('oneOf')) {
-        const err = Error('Invalid configuration. Missing required one-of property: oneOf. Must be an array of schema configurations.');
-        util.throwWithMeta(err, util.errors.config);
+        throw Error('Invalid configuration. Missing required one-of property: oneOf. Must be an array of schema configurations.');
     }
     if (!Array.isArray(config.oneOf) || config.oneOf.filter(v => !v || typeof v !== 'object').length) {
-        const err = Error('Invalid configuration value for property: oneOf. Must be an array of schema configurations.');
-        util.throwWithMeta(err, util.errors.config);
+        throw Error('Invalid configuration value for property: oneOf. Must be an array of schema configurations.');
     }
 
     // create each unique schema
@@ -78,7 +75,7 @@ TypedOneOf.prototype.error = function(value, prefix) {
         errors.push(error);
     }
 
-    return util.errish(prefix + 'All possible schemas have errors:\n  ' + errors.join('\n  '), TypedOneOf.errors.oneOf);
+    return prefix + 'All possible schemas have errors:\n  ' + errors.join('\n  ');
 };
 
 TypedOneOf.prototype.normalize = function(value) {
@@ -86,14 +83,6 @@ TypedOneOf.prototype.normalize = function(value) {
     for (let i = 0; i < length; i++) {
         const error = this.oneOf[i].error(value, '');
         if (!error) return this.oneOf[i].normalize(value);
-    }
-};
-
-TypedOneOf.errors = {
-    oneOf: {
-        code: 'EONEO',
-        explanation: 'None of the possible schemas matched the value.',
-        summary: 'No matching schema found.'
     }
 };
 

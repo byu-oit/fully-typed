@@ -30,8 +30,7 @@ function FullyTyped (configuration) {
 
     // validate input parameter
     if (!util.isPlainObject(configuration)) {
-        const err = Error('If provided, the schema configuration must be a plain object. Received: ' + configuration);
-        util.throwWithMeta(err, exports.errors.config);
+        throw Error('If provided, the schema configuration must be a plain object. Received: ' + configuration);
     }
 
     // get a copy of the configuration
@@ -44,10 +43,7 @@ function FullyTyped (configuration) {
     const data = FullyTyped.controllers.get(config.type);
 
     // type is invalid
-    if (!data) {
-        const err = Error('Unknown type: ' + config.type);
-        util.throwWithMeta(err, util.errors.config);
-    }
+    if (!data) throw Error('Unknown type: ' + config.type);
 
     // return a schema object
     return new Schema(config, data);

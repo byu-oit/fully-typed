@@ -17,7 +17,6 @@
 'use strict';
 const expect            = require('chai').expect;
 const Schema            = require('../index');
-const util              = require('../bin/util');
 
 describe('TypedBoolean', () => {
 
@@ -39,7 +38,7 @@ describe('TypedBoolean', () => {
 
         it('strict requires boolean', () => {
             const b = Schema({ type: Boolean, strict: true });
-            expect(b.error(123).code).to.equal(util.errors.type.code);
+            expect(b.error(123)).to.match(/Expected a boolean/);
         });
 
         it('not strict does not require boolean', () => {

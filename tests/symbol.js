@@ -17,7 +17,6 @@
 'use strict';
 const expect            = require('chai').expect;
 const Schema            = require('../index');
-const util              = require('../bin/util');
 
 describe('TypedSymbol', () => {
 
@@ -25,7 +24,7 @@ describe('TypedSymbol', () => {
 
         it('errors if type not symbol', () => {
             const b = Schema({ type: Symbol });
-            expect(b.error(123).code).to.equal(util.errors.type.code);
+            expect(b.error(123)).to.match(/Expected a symbol/);
         });
 
         it('ok if type is symbol', () => {

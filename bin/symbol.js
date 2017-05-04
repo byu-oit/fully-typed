@@ -35,14 +35,10 @@ function TypedSymbol (config) {
 TypedSymbol.prototype.error = function (value, prefix) {
 
     if (typeof value !== 'symbol') {
-        return util.errish(prefix + util.valueErrorMessage(value, 'Expected a symbol.'), util.errors.type);
+        return prefix + util.valueErrorMessage(value, 'Expected a symbol.');
     }
 
     return null;
-};
-
-TypedSymbol.errors = {
-
 };
 
 TypedSymbol.register = {

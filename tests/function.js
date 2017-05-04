@@ -18,25 +18,21 @@
 const expect            = require('chai').expect;
 const Schema            = require('../index');
 const TypedFunction     = require('../bin/function');
-const util              = require('../bin/util');
 
 describe('TypedFunction', () => {
 
     describe('maxArguments', () => {
 
         it('cannot be less than min', () => {
-            const e = util.extractError(() => Schema({ type: Function, maxArguments: 0, minArguments: 1 }));
-            expect(e.code).to.equal(util.errors.config.code);
+            expect(() => Schema({ type: Function, maxArguments: 0, minArguments: 1 })).to.throw(/Expected a integer greater than minArgument/);
         });
 
         it('must be an integer', () => {
-            const e = util.extractError(() => Schema({ type: Function, maxArguments: 0.5 }));
-            expect(e.code).to.equal(util.errors.config.code);
+            expect(() => Schema({ type: Function, maxArguments: 0.5 })).to.throw(/Expected a integer greater than minArgument/);
         });
 
         it('must be a number', () => {
-            const e = util.extractError(() => Schema({ type: Function, maxArguments: '' }));
-            expect(e.code).to.equal(util.errors.config.code);
+            expect(() => Schema({ type: Function, maxArguments: '' })).to.throw(/Expected a integer greater than minArgument/);
         });
 
     });
@@ -44,18 +40,15 @@ describe('TypedFunction', () => {
     describe('minArguments', () => {
 
         it('cannot be less than 0', () => {
-            const e = util.extractError(() => Schema({ type: Function, minArguments: -1 }));
-            expect(e.code).to.equal(util.errors.config.code);
+            expect(() => Schema({ type: Function, minArguments: -1 })).to.throw(/Expected a non-negative integer/);
         });
 
         it('must be an integer', () => {
-            const e = util.extractError(() => Schema({ type: Function, minArguments: 0.5 }));
-            expect(e.code).to.equal(util.errors.config.code);
+            expect(() => Schema({ type: Function, minArguments: 0.5 })).to.throw(/Expected a non-negative integer/);
         });
 
         it('must be a number', () => {
-            const e = util.extractError(() => Schema({ type: Function, minArguments: '' }));
-            expect(e.code).to.equal(util.errors.config.code);
+            expect(() => Schema({ type: Function, minArguments: '' })).to.throw(/Expected a non-negative integer/);
         });
 
     });
@@ -69,32 +62,32 @@ describe('TypedFunction', () => {
 
         it('checks type', () => {
             const f = Schema({ type: Function });
-            expect(f.error('').code).to.equal(util.errors.type.code);
+            expect(f.error('')).to.match(/Expected a function/);
         });
 
         it('named function', () => {
             const f = Schema({ type: Function, named: true });
-            expect(f.error(() => {}).code).to.equal(TypedFunction.errors.named.code);
+            expect(f.error('')).to.match(/Expected a named function/);
         });
 
         it('min arguments 1', () => {
             const f = Schema({ type: 'function', minArguments: 1 });
-            expect(f.error(() => {}).code).to.equal(TypedFunction.errors.minArguments.code);
+            expect(f.error(() => {})).to.match(/Expected the function to have at least/);
         });
 
         it('min arguments 2', () => {
             const f = Schema({ type: 'function', minArguments: 2 });
-            expect(f.error(() => {}).code).to.equal(TypedFunction.errors.minArguments.code);
+            expect(f.error(() => {})).to.match(/Expected the function to have at least/);
         });
 
         it('max arguments 1', () => {
             const f = Schema({ type: 'function', maxArguments: 0 });
-            expect(f.error((a) => {}).code).to.equal(TypedFunction.errors.maxArguments.code);
+            expect(f.error((a) => {})).to.match(/Expected the function to have at most/);
         });
 
         it('max arguments 2', () => {
             const f = Schema({ type: 'function', maxArguments: 1 });
-            expect(f.error((a, b) => {}).code).to.equal(TypedFunction.errors.maxArguments.code);
+            expect(f.error((a, b) => {})).to.match(/Expected the function to have at most/);
         });
 
     });

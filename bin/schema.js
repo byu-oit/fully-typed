@@ -109,11 +109,8 @@ Schema.prototype.normalize = function(value) {
  */
 Schema.prototype.validate = function(value, prefix) {
     validateContext(this);
-    const o = this.error(value, prefix);
-    if (o) {
-        const err = Error(o.message);
-        util.throwWithMeta(err, o);
-    }
+    const str = this.error(value, prefix);
+    if (str) throw Error(str);
 };
 
 

@@ -16,17 +16,14 @@
  **/
 'use strict';
 const expect            = require('chai').expect;
-const Typed             = require('../bin/typed');
 const TypedString       = require('../bin/string');
-const util              = require('../bin/util');
 
 describe('TypedString', () => {
 
     describe('minLength', () => {
 
         it('cannot be a negative number', () => {
-            const e = util.extractError(() => new TypedString({ minLength: -1 }));
-            expect(e.code).to.equal(Typed.errors.config.code);
+            expect(() => new TypedString({ minLength: -1 })).to.throw(/integer that is greater than/);
         });
 
         it('can be zero', () => {
@@ -42,8 +39,7 @@ describe('TypedString', () => {
     describe('maxLength', () => {
 
         it('cannot be a negative number', () => {
-            const e = util.extractError(() => new TypedString({ maxLength: -1 }));
-            expect(e.code).to.equal(Typed.errors.config.code);
+            expect(() => new TypedString({ maxLength: -1 })).to.throw(/integer that is greater than/);
         });
 
         it('can be zero', () => {
@@ -55,8 +51,7 @@ describe('TypedString', () => {
         });
 
         it('cannot be less than minLength', () => {
-            const e = util.extractError(() => new TypedString({ minLength: 1, maxLength: 0 }));
-            expect(e.code).to.equal(Typed.errors.config.code);
+            expect(() => new TypedString({ minLength: 1, maxLength: 0 })).to.throw(/integer that is greater than/);
         });
 
         it('can be same as minLength', () => {
@@ -76,8 +71,7 @@ describe('TypedString', () => {
         });
 
         it('cannot be a string', () => {
-            const e = util.extractError(() => new TypedString({ pattern: 'abc' }));
-            expect(e.code).to.equal(Typed.errors.config.code);
+            expect(() => new TypedString({ pattern: 'abc' })).to.throw(/Must be a regular expression object/);
         });
 
     });
@@ -91,22 +85,22 @@ describe('TypedString', () => {
 
         it('checks type', () => {
             const str = new TypedString({});
-            expect(str.error(123).code).to.equal(Typed.errors.type.code);
+            expect(str.error(123)).to.match(/Expected a string/);
         });
 
         it('checks max', () => {
             const str = new TypedString({ maxLength: 1 });
-            expect(str.error('abc').code).to.equal(TypedString.errors.max.code);
+            expect(str.error('abc')).to.match(/Must contain at most/);
         });
 
         it('checks min', () => {
             const str = new TypedString({ minLength: 1 });
-            expect(str.error('').code).to.equal(TypedString.errors.min.code);
+            expect(str.error('')).to.match(/Must contain at least/);
         });
 
         it('checks pattern', () => {
             const str = new TypedString({ pattern: /^a$/ });
-            expect(str.error('b').code).to.equal(TypedString.errors.pattern.code);
+            expect(str.error('b')).to.match(/Does not match required pattern/);
         });
 
     });

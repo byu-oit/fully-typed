@@ -63,23 +63,6 @@ exports.errors = {
     }
 };
 
-exports.errish = function(message, meta) {
-    const err = { message: message };
-    exports.applyErrorMeta(err, meta);
-    err.toString = function() { return err.message };
-    return err;
-};
-
-exports.extractError = function (callback) {
-    let err = {};
-    try {
-        callback();
-    } catch (e) {
-        err = e;
-    }
-    return err;
-};
-
 exports.isInteger = function (value) {
     return exports.isNumber(value) && value === Math.round(value);
 };
@@ -101,11 +84,6 @@ exports.isValidSchemaConfiguration = function(value) {
 
 exports.propertyErrorMessage = function (property, actual, expected) {
     return 'Invalid configuration value for property: ' + property + '. ' + expected + ' Received: ' + quoteWrap(actual);
-};
-
-exports.throwWithMeta = function(err, meta) {
-    exports.applyErrorMeta(err, meta);
-    throw err;
 };
 
 exports.valueErrorMessage = function(actual, expected) {

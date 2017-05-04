@@ -18,7 +18,6 @@
 const expect            = require('chai').expect;
 const Schema            = require('../index');
 const Typed             = require('../bin/typed');
-const util              = require('../bin/util');
 
 describe('Typed', () => {
 
@@ -41,13 +40,11 @@ describe('Typed', () => {
     describe('enum', () => {
 
         it('cannot be a string', () => {
-            const e = util.extractError(() => Schema({ enum: 'hello' }));
-            expect(e.code).to.equal(Typed.errors.config.code);
+            expect(() => Schema({ enum: 'hello' })).to.throw(/Expected a non-empty array/);
         });
 
         it('cannot be an empty array', () => {
-            const e = util.extractError(() => Schema({ enum: [] }));
-            expect(e.code).to.equal(Typed.errors.config.code);
+            expect(() => Schema({ enum: [] })).to.throw(/Expected a non-empty array/);
         });
 
         it('can be an array', () => {
@@ -68,8 +65,7 @@ describe('Typed', () => {
         });
 
         it('can not be a string', () => {
-            const e = util.extractError(() => Schema({ transform: 'hello' }));
-            expect(e.code).to.equal(Typed.errors.config.code);
+            expect(() => Schema({ transform: 'hello' })).to.throw(/Expected a function/);
         });
 
     });
@@ -77,8 +73,7 @@ describe('Typed', () => {
     describe('type', () => {
 
         it('must be a registered constructor', () => {
-            const e = util.extractError(() => Schema({ type: () => {} }));
-            expect(e.code).to.equal(Typed.errors.config.code);
+            expect(() => Schema({ type: () => {} })).to.throw(/Unknown type/);
         });
 
         it('can be a string matching typeof possibilities', () => {
@@ -90,8 +85,7 @@ describe('Typed', () => {
         });
 
         it('cannot be an arbitrary string', () => {
-            const e = util.extractError(() => Schema({ type: 'abc' }));
-            expect(e.code).to.equal(Typed.errors.config.code);
+            expect(() => Schema({ type: 'abc' })).to.throw(/Unknown type/);
         });
 
     });
@@ -103,8 +97,7 @@ describe('Typed', () => {
         });
 
         it('cannot be a string', () => {
-            const e = util.extractError(() => new Typed({ validator: 'abc' }));
-            expect(e.code).to.equal(Typed.errors.config.code);
+            expect(() => new Typed({ validator: 'abc' })).to.throw(/Expected a function/);
         });
 
     });
@@ -137,22 +130,22 @@ describe('Typed', () => {
 
         it('checks enum', () => {
             const item = Schema({ enum: ['abc'] });
-            expect(item.error('def').code).to.equal(Typed.errors.enum.code);
+            expect(item.error('def')).to.match(/Expected one of/);
         });
         
         it('checks type', () => {
             const item = Schema({ type: Number });
-            expect(item.error(true).code).to.equal(Typed.errors.type.code);
+            expect(item.error(true)).to.match(/Expected a number/);
         });
 
         it('runs validator', () => {
             const item = Schema({ validator: v => false });
-            expect(item.error('').code).to.equal(Typed.errors.validate.code);
+            expect(item.error('')).to.match(/Validator did not pass/);
         });
 
         it('runs validator with custom message', () => {
             const item = Schema({ validator: v => 'fail' });
-            expect(/fail/.test(item.error('').message)).to.equal(true);
+            expect(/fail/.test(item.error(''))).to.equal(true);
         });
 
     });
@@ -188,8 +181,7 @@ describe('Typed', () => {
 
         it('validate error', () => {
             const item = Schema({ validator: v => false });
-            const e = util.extractError(() => item.validate(''));
-            expect(e.code).to.equal(Typed.errors.validate.code);
+            expect(() => item.validate('')).to.throw(/Validator did not pass/);
         });
 
     });

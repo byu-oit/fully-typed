@@ -83,13 +83,13 @@ positiveIntegerSchema.error(0);         // null - no error
 positiveIntegerSchema.error(1);         // null - no error
 
 // check for errors - invalid values
-positiveIntegerSchema.error(-1).message;   // Invalid number. Must be greater than or equal to 0. Received: -1
-positiveIntegerSchema.error(1.2).message;  // Invalid number. Must be an integer. Received: 1.2
-positiveIntegerSchema.error('1').message;  // Invalid value. Expected a number. Received: "1"
+positiveIntegerSchema.error(-1);        // Invalid number. Must be greater than or equal to 0. Received: -1
+positiveIntegerSchema.error(1.2);       // Invalid number. Must be an integer. Received: 1.2
+positiveIntegerSchema.error('1');       // Invalid value. Expected a number. Received: "1"
 
 // throw errors
-positiveIntegerSchema.validate(-1);        // throws error
-positiveIntegerSchema.normalize(-1);       // validate will run prior to normalization - throws error
+positiveIntegerSchema.validate(-1);     // throws error
+positiveIntegerSchema.normalize(-1);    // validate will run prior to normalization - throws error
 ```
 
 ## Table of Contents
@@ -643,7 +643,7 @@ Once a schema is created you can [check a value for errors](#error), [normalize 
 
 ### error
 
-Test a value for errors. If the value does produce an error then an object is returned that details the cause of the error.
+Test a value for errors. If the value does produce an error then a string is returned that details the cause of the error.
 
 **Parameters**
 
@@ -651,7 +651,7 @@ Test a value for errors. If the value does produce an error then an object is re
 
 - *prefix* - An optional string to append to the beginning of an error message. Defaults to an empty string: `''`.
 
-**Returns** null if no errors were found or an object that details the error found.
+**Returns** `null` if no errors otherwise a string with error details.
 
 ```js
 const schema = Typed({
@@ -659,13 +659,7 @@ const schema = Typed({
 });
 
 schema.error(1);        // null
-schema.error('a');      /* {
-                              message: 'Invalid value. Expected a number. Received: "a"',
-                              code: 'ETTYP',
-                              explanation: 'The type of the value does not match that specified by the configuration.',
-                              summary: 'Invalid type.'
-                           }
-                        */
+schema.error('a');      // "Expected a number"
 ```
 
 ### normalize
@@ -736,7 +730,7 @@ A plugin is created by defining a typed controller. [See the example](#typeddate
 1. Define a constructor function that accepts a configuration as it's only parameter.
 
     ```js
-    function MyController (config) { ... }
+    function MyController (config) { }
     ```
 
 2. Define and validate the configuration properties that are important to your controller.
@@ -746,7 +740,7 @@ A plugin is created by defining a typed controller. [See the example](#typeddate
 4. Optionally define the error generator function on the prototype of the controller. This function will be used for normalization and validation. 
 
     ```js
-    MyController.prototype.error = function (value, prefix) { ... }
+    MyController.prototype.error = function (value, prefix) { }
     ```
 
     This function will receive two parameters when called: 1) the value to validate, 2) a prefix to add to the beginning of any returned error messages.
@@ -756,7 +750,7 @@ A plugin is created by defining a typed controller. [See the example](#typeddate
 5. Optionally define the normalize function. This function will be called after passing validation and can make any transformations to the value. 
 
     ```js
-    MyController.prototype.normalize = function (value) { ... }
+    MyController.prototype.normalize = function (value) { }
     ```
     
     This function receives the value parameter. It must return the normalized value.

@@ -34,15 +34,13 @@ function TypedObject (config) {
 
     if (hasProperties && !util.isValidSchemaConfiguration(config.properties)) {
         const message = util.propertyErrorMessage('properties', config.properties, 'Must be a plain object.');
-        const err = Error(message);
-        util.throwWithMeta(err, util.errors.config);
+        throw Error(message);
     }
 
     if (config.hasOwnProperty('schema')) {
         if (!util.isValidSchemaConfiguration(config.schema)) {
             const message = util.propertyErrorMessage('schema', config.schema, 'Must be a plain object.');
-            const err = Error(message);
-            util.throwWithMeta(err, util.errors.config);
+            throw Error(message);
         }
         validateSchemaConfiguration('schema', config.schema);
     }
@@ -100,14 +98,13 @@ function TypedObject (config) {
             const optionsIsNotOneOf = !FullyTyped.controllers.is('one-of', options.type);
 
             if (!util.isValidSchemaConfiguration(options)) {
-                const err = Error('Invalid configuration for property: ' + key + '. Must be a plain object.');
-                util.throwWithMeta(err, util.errors.config);
+                throw Error('Invalid configuration for property: ' + key + '. Must be a plain object.');
             }
 
             // merge generic schema with property specific schemas
             if (config.schema) {
                 if (schemaIsNotOneOf && optionsIsNotOneOf) {
-                    options = mergeSchemas(config.schema, options); // TODO: test if oneOf can not be array - should not be possible
+                    options = mergeSchemas(config.schema, options);
                 } else if (schemaIsNotOneOf) {
                     options.oneOf = options.oneOf.map(item => mergeSchemas(config.schema, item));
                 } else if (optionsIsNotOneOf) {
@@ -145,11 +142,11 @@ function TypedObject (config) {
 TypedObject.prototype.error = function(value, prefix) {
 
     if (typeof value !== 'object') {
-        return util.errish(prefix + util.valueErrorMessage(value, 'Expected an object.'), util.errors.type);
+        return prefix + util.valueErrorMessage(value, 'Expected an object.');
     }
 
     if (!value && !this.allowNull) {
-        return util.errish(prefix + 'Object cannot be null.', TypedObject.errors.null);
+        return prefix + 'Object cannot be null.';
     }
 
     // null allowed - no other tests make a difference
@@ -163,8 +160,7 @@ TypedObject.prototype.error = function(value, prefix) {
         .forEach(function(key) {
             const schema = object.properties[key];
             if (schema.required && !value.hasOwnProperty(key)) {
-                const err = util.errish('Missing required value for property: ' + key, TypedObject.errors.required);
-                err.property = key;
+                const err = 'Missing required value for property: ' + key;
                 errors.push(err);
             }
         });
@@ -179,18 +175,12 @@ TypedObject.prototype.error = function(value, prefix) {
 
             // run inherited error check on property
             const err = schema.error(value[key]);
-            if (err) {
-                err.property = key;
-                errors.push(err);
-            }
+            if (err) errors.push(err);
         });
 
     if (errors.length > 0) {
         const count = errors.length === 1 ? 'One error with property' : 'Multiple errors with properties';
-        const err = util.errish(prefix + count + ' in the object:\n  ' +
-            errors.map(function(e) { return e.toString() }).join('\n  '), TypedObject.errors.properties);
-        err.errors = errors;
-        return err;
+        return prefix + count + ' in the object:\n  ' + errors.join('\n  ');
     }
 
     return null;
@@ -221,24 +211,6 @@ TypedObject.prototype.normalize = function(value) {
     return result;
 };
 
-TypedObject.errors = {
-    null: {
-        code: 'EONUL',
-        explanation: 'The object cannot be null.',
-        summary: 'The object cannot be null.'
-    },
-    properties: {
-        code: 'EOPRP',
-        explanation: 'One or more properties in the object have errors.',
-        summary: 'One or more errors in properties.'
-    },
-    required: {
-        code: 'EOREQ',
-        explanation: 'A required property has not been assigned a value.',
-        summary: 'Missing required property value.'
-    }
-};
-
 TypedObject.register = {
     aliases: ['object', Object],
     dependencies: []
@@ -262,7 +234,6 @@ function validateSchemaConfiguration (key, schema) {
 
     // required
     if (schema.required && schema.hasDefault) {
-        const err = Error('Invalid configuration for property: ' + key + '. Cannot make required and provide a default value.');
-        util.throwWithMeta(err, util.errors.config);
+        throw Error('Invalid configuration for property: ' + key + '. Cannot make required and provide a default value.');
     }
 }

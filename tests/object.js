@@ -17,18 +17,14 @@
 'use strict';
 const expect            = require('chai').expect;
 const Schema            = require('../index');
-const Typed             = require('../bin/typed');
 const TypedObject       = require('../bin/object');
-const util              = require('../bin/util');
-
 describe('TypedObject', () => {
 
     describe('properties', () => {
 
         it('properties cannot be null', () => {
             const properties = null;
-            const e = util.extractError(() => Schema({ type: Object, properties: properties }));
-            expect(e.code).to.equal(util.errors.config.code);
+            expect(() => Schema({ type: Object, properties: properties })).to.throw(/Must be a plain object/);
         });
 
         it('properties can be a plain object', () => {
@@ -38,12 +34,11 @@ describe('TypedObject', () => {
 
         it('properties cannot be an array', () => {
             const properties = [];
-            expect(() => Schema({ type: Object, properties: properties })).to.throw(Error);
+            expect(() => Schema({ type: Object, properties: properties })).to.throw(/Must be a plain object/);
         });
 
         it('property cannot be number', () => {
-            const e = util.extractError(() => Schema({ type: Object, properties: { a: 123 } }));
-            expect(e.code).to.equal(util.errors.config.code);
+            expect(() => Schema({ type: Object, properties: { a: 123 } })).to.throw(/Must be a plain object/);
         });
 
         it('property can be null', () => {
@@ -103,9 +98,8 @@ describe('TypedObject', () => {
         });
 
         it('cannot be required and have default', () => {
-            const err = util.extractError(() => Schema({ type: Object, properties: { x: { required: true, default: 5 } } }));
-            expect(err.code).to.equal(Typed.errors.config.code);
-            expect(/Cannot make required and provide a default/.test(err.message)).to.be.true;
+            expect(() => Schema({ type: Object, properties: { x: { required: true, default: 5 } } }))
+                .to.throw(/Cannot make required and provide a default/);
         });
 
     });
@@ -381,7 +375,7 @@ describe('TypedObject', () => {
         it('checks type', () => {
             const o = Schema({ type: Object });
             const err = o.error(123);
-            expect(err.code).to.equal(util.errors.type.code);
+            expect(err).to.match(/Expected an object/);
         });
 
         it('allow null', () => {
@@ -393,7 +387,7 @@ describe('TypedObject', () => {
         it('do not allow null', () => {
             const o = Schema({ type: Object, allowNull: false });
             const err = o.error(null);
-            expect(err.code).to.equal(TypedObject.errors.null.code);
+            expect(err).to.match(/Object cannot be null/);
         });
 
         it('can be errorless', () => {
@@ -405,17 +399,13 @@ describe('TypedObject', () => {
         it('must have required property', () => {
             const o = Schema({ type: Object, properties: { x: { required: true }} });
             const err = o.error({});
-            expect(err.errors.length).to.equal(1);
-            expect(err.errors[0].code).to.equal(TypedObject.errors.required.code);
-            expect(err.errors[0].property).to.equal('x');
+            expect(err).to.match(/Missing required value for property/);
         });
 
         it('checks for inherited errors', () => {
             const o = Schema({ type: Object, properties: { x: { type: Number }} });
             const err = o.error({ x: 'hello' });
-            expect(err.errors.length).to.equal(1);
-            expect(err.errors[0].code).to.equal(Typed.errors.type.code);
-            expect(err.errors[0].property).to.equal('x');
+            expect(err).to.match(/One error with property/);
         });
 
         it('checks for array of schemas', () => {

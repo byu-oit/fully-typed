@@ -16,9 +16,7 @@
  **/
 'use strict';
 const expect            = require('chai').expect;
-const OneOf             = require('../bin/one-of');
 const Schema            = require('../index');
-const util              = require('../bin/util');
 
 describe('one of schemas', () => {
 
@@ -57,17 +55,15 @@ describe('one of schemas', () => {
 
         it('cannot be a boolean', () => {
             const err = schema.error(true);
-            expect(err.code).to.equal(OneOf.errors.oneOf.code);
+            expect(err).to.match(/All possible schemas have errors/);
         });
 
         it('cannot be an object', () => {
-            const err = util.extractError(() => schema.validate({}) );
-            expect(err.code).to.equal(OneOf.errors.oneOf.code);
+            expect(() => schema.validate({})).to.throw(/All possible schemas have errors/);
         });
 
         it('normalize error', () => {
-            const err = util.extractError(() => schema.normalize({}) );
-            expect(err.code).to.equal(OneOf.errors.oneOf.code);
+            expect(() => schema.normalize({})).to.throw(/All possible schemas have errors/);
         });
 
     });
