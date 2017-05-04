@@ -159,9 +159,11 @@ function Controllers() {
                 if (proto.hasOwnProperty('normalize')) normalizeFunctions.push(proto.normalize);
             }
         });
-        controllers.push(controller);
-        if (controller.prototype.hasOwnProperty('error')) errorFunctions.push(controller.prototype.error);
-        if (controller.prototype.hasOwnProperty('normalize')) normalizeFunctions.push(controller.prototype.normalize);
+        if (controller !== Typed) {
+            controllers.push(controller);
+            if (controller.prototype.hasOwnProperty('error')) errorFunctions.push(controller.prototype.error);
+            if (controller.prototype.hasOwnProperty('normalize')) normalizeFunctions.push(controller.prototype.normalize);
+        }
 
         // create data object to store
         const data = {
@@ -193,6 +195,9 @@ function Controllers() {
         });
 
     };
+
+    // register Typed
+    factory.register(Typed);
 
     return factory;
 }
