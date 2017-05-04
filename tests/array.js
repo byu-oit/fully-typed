@@ -91,6 +91,7 @@ describe('TypedArray', () => {
             const ar = Schema({ type: Array, uniqueItems: true });
             expect(ar.error([1, 2, 3])).to.equal(null);
             expect(ar.error([1, 2, 1]).code).to.equal(TypedArray.errors.unique.code);
+            expect(ar.error([1, 2, 1, 1]).code).to.equal(TypedArray.errors.unique.code);
         });
 
         describe('Schema', () => {
