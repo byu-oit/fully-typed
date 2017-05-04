@@ -94,7 +94,7 @@ describe('TypedFunction', () => {
 
         it('max arguments 2', () => {
             const f = Schema({ type: 'function', maxArguments: 1 });
-            expect(f.error((a) => {}).code).to.equal(TypedFunction.errors.maxArguments.code);
+            expect(f.error((a, b) => {}).code).to.equal(TypedFunction.errors.maxArguments.code);
         });
 
     });
