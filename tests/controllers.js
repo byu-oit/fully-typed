@@ -81,6 +81,10 @@ describe('controllers', () => {
         expect(ctrl.has('foo')).to.be.false;
     });
 
+    it('cannot delete Typed', () => {
+        expect(() => ctrl.delete('typed')).to.throw(/Cannot delete core controller/);
+    });
+
     it('cannot delete dependency', () => {
         const foo = makeController('foo', ['foo'], []);
         const bar = makeController('bar', ['bar'], ['foo']);

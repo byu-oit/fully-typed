@@ -45,6 +45,8 @@ function Controllers() {
     factory.delete = function(alias) {
         if (store.has(alias)) {
             const data = store.get(alias);
+            if (data.controller === Typed) throw Error('Cannot delete core controller: Typed');
+
             const items = dependencies.get(data);
             if (items && items.length > 0) {
                 const names = items.map(v => v.alias);
