@@ -152,6 +152,9 @@ TypedObject.prototype.error = function(value, prefix) {
         return util.errish(prefix + 'Object cannot be null.', TypedObject.errors.null);
     }
 
+    // null allowed - no other tests make a difference
+    if (!value) return null;
+
     const errors = [];
     const object = this;
 
@@ -167,22 +170,20 @@ TypedObject.prototype.error = function(value, prefix) {
         });
 
     // validate each property value
-    if (value) {
-        Object.keys(value)
-            .forEach(key => {
-                const schema = object.properties.hasOwnProperty(key)
-                    ? object.properties[key]
-                    : object.schema;
-                if (!schema) return;
+    Object.keys(value)
+        .forEach(key => {
+            const schema = object.properties.hasOwnProperty(key)
+                ? object.properties[key]
+                : object.schema;
+            if (!schema) return;
 
-                // run inherited error check on property
-                const err = schema.error(value[key]);
-                if (err) {
-                    err.property = key;
-                    errors.push(err);
-                }
-            });
-    }
+            // run inherited error check on property
+            const err = schema.error(value[key]);
+            if (err) {
+                err.property = key;
+                errors.push(err);
+            }
+        });
 
     if (errors.length > 0) {
         const count = errors.length === 1 ? 'One error with property' : 'Multiple errors with properties';
@@ -199,23 +200,23 @@ TypedObject.prototype.normalize = function(value) {
     const result = {};
     const object = this;
 
+    if (!value) return null;
+
     Object.keys(object.properties)
         .forEach(function(key) {
             const item = object.properties[key];
             if (item.hasDefault && !value.hasOwnProperty(key)) value[key] = item.default;
         });
 
-    if (value) {
-        Object.keys(value)
-            .forEach(function (key) {
-                if (object.properties.hasOwnProperty(key)) {
-                    const schema = object.properties[key];
-                    result[key] = schema.normalize(value[key]);
-                } else if (!object.clean) {
-                    result[key] = value[key];
-                }
-            });
-    }
+    Object.keys(value)
+        .forEach(function (key) {
+            if (object.properties.hasOwnProperty(key)) {
+                const schema = object.properties[key];
+                result[key] = schema.normalize(value[key]);
+            } else if (!object.clean) {
+                result[key] = value[key];
+            }
+        });
 
     return result;
 };
