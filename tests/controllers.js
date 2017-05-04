@@ -59,7 +59,7 @@ describe('controllers', () => {
         ctrl.register(foo);
         ctrl.register(bar);
         const items = ctrl.list();
-        expect(items.length).to.equal(2);
+        expect(items.length).to.equal(3);   // 3 because Typed is auto registered
     });
 
     it('has checks existence', () => {
