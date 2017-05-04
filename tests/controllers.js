@@ -41,8 +41,20 @@ describe('controllers', () => {
         expect(ctrl.get(o)).not.to.be.null;
     });
 
+    it('can auto alias to undefined', () => {
+        const f = (function() {
+            return function() {}
+        })();
+        function foo() {}
+        foo.register = { aliases: [f] };
+        ctrl.register(foo);
+
+        const item = ctrl.get(f);
+        expect(item.alias).to.equal('undefined');
+    });
+
     it('can get list of controllers', () => {
-        const foo = makeController('foo', ['foo'], []);
+        const foo = makeController('foo', ['foo', 'foo1'], []);
         const bar = makeController('bar', ['bar'], ['foo']);
         ctrl.register(foo);
         ctrl.register(bar);
@@ -64,6 +76,11 @@ describe('controllers', () => {
         expect(ctrl.has('foo')).to.be.false;
     });
 
+    it('can delete if dne', () => {
+        expect(() => ctrl.delete('foo')).not.to.throw(Error);
+        expect(ctrl.has('foo')).to.be.false;
+    });
+
     it('cannot delete dependency', () => {
         const foo = makeController('foo', ['foo'], []);
         const bar = makeController('bar', ['bar'], ['foo']);
@@ -72,7 +89,7 @@ describe('controllers', () => {
         expect(() => ctrl.delete('foo')).to.throw(Error);
     });
 
-    it('deleting a dependent removes dependency', () => {
+    it('deleting last dependent removes dependency', () => {
         const foo = makeController('foo', ['foo'], []);
         const bar = makeController('bar', ['bar'], ['foo']);
         ctrl.register(foo);
@@ -81,6 +98,57 @@ describe('controllers', () => {
         expect(() => ctrl.delete('foo')).not.to.throw(Error);
         expect(ctrl.has('bar')).to.be.false;
         expect(ctrl.has('foo')).to.be.false;
+    });
+
+    it('deleting not-last dependent does not remove dependency', () => {
+        const foo = makeController('foo', ['foo'], []);
+        const bar = makeController('bar', ['bar'], ['foo']);
+        const baz = makeController('baz', ['baz'], ['foo']);
+        ctrl.register(foo);
+        ctrl.register(bar);
+        ctrl.register(baz);
+        expect(() => ctrl.delete('bar')).not.to.throw(Error);
+        expect(() => ctrl.delete('foo')).to.throw(Error);
+    });
+
+    describe('register errors', () => {
+
+        it('controller must be a function', () => {
+            expect(() => ctrl.register('abc')).to.throw(/must be a constructor function/);
+        });
+
+        it('controller does not have static register', () => {
+            function foo() {}
+            expect(() => ctrl.register(foo)).to.throw(/must have a static property/);
+        });
+
+        it('controller does not register alias', () => {
+            function foo() {}
+            foo.register = {};
+            expect(() => ctrl.register(foo)).to.throw(/register aliases/);
+        });
+
+        it('dependencies not an array', () => {
+            function foo() {}
+            foo.register = {
+                aliases: ['foo'],
+                dependencies: 'abc'
+            };
+            expect(() => ctrl.register(foo)).to.throw(/register dependencies/);
+        });
+
+        it('alias in use', () => {
+            const foo1 = makeController('foo', ['foo'], []);
+            const foo2 = makeController('foo', ['foo'], []);
+            ctrl.register(foo1);
+            expect(() => ctrl.register(foo2)).to.throw(/already in use/);
+        });
+
+        it('dependency not defined', () => {
+            const foo = makeController('foo', ['foo'], ['bar']);
+            expect(() => ctrl.register(foo)).to.throw(/dependency not defined/);
+        });
+
     });
 
 });
