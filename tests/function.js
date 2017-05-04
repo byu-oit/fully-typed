@@ -77,13 +77,23 @@ describe('TypedFunction', () => {
             expect(f.error(() => {}).code).to.equal(TypedFunction.errors.named.code);
         });
 
-        it('min arguments', () => {
+        it('min arguments 1', () => {
             const f = Schema({ type: 'function', minArguments: 1 });
             expect(f.error(() => {}).code).to.equal(TypedFunction.errors.minArguments.code);
         });
 
-        it('max arguments', () => {
+        it('min arguments 2', () => {
+            const f = Schema({ type: 'function', minArguments: 2 });
+            expect(f.error(() => {}).code).to.equal(TypedFunction.errors.minArguments.code);
+        });
+
+        it('max arguments 1', () => {
             const f = Schema({ type: 'function', maxArguments: 0 });
+            expect(f.error((a) => {}).code).to.equal(TypedFunction.errors.maxArguments.code);
+        });
+
+        it('max arguments 2', () => {
+            const f = Schema({ type: 'function', maxArguments: 1 });
             expect(f.error((a) => {}).code).to.equal(TypedFunction.errors.maxArguments.code);
         });
 
