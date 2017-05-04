@@ -130,6 +130,11 @@ describe('Typed', () => {
 
         });
 
+        it('invalid context', () => {
+            const item = Schema({});
+            expect(() => item.error.call(null, 'abc')).to.throw(/Invalid context/);
+        });
+
         it('checks enum', () => {
             const item = Schema({ enum: ['abc'] });
             expect(item.error('def').code).to.equal(Typed.errors.enum.code);
