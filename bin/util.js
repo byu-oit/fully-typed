@@ -22,12 +22,6 @@ exports.aOrAn = function(word) {
     return (vowels.indexOf(ch1) === -1 ? 'a' : 'an') + ' ' + word;
 };
 
-exports.applyErrorMeta = function(err, meta) {
-    err.code = meta.code;
-    err.explanation = meta.explanation;
-    err.summary = meta.summary;
-};
-
 exports.copy = function(value) {
     if (Array.isArray(value)) {
         return value.map(function(v) {
