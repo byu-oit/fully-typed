@@ -67,7 +67,7 @@ describe('TypedFunction', () => {
 
         it('named function', () => {
             const f = Schema({ type: Function, named: true });
-            expect(f.error('')).to.match(/Expected a named function/);
+            expect(f.error(() => {})).to.match(/Expected a named function/);
         });
 
         it('min arguments 1', () => {
