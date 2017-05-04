@@ -1,6 +1,6 @@
 /**
  *  @license
- *    Copyright 2016 Brigham Young University
+ *    Copyright 2017 Brigham Young University
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ function TypedBoolean (config) {
 TypedBoolean.prototype.error = function (value, prefix) {
 
     if (this.strict && typeof value !== 'boolean') {
-        return util.errish(prefix + util.valueErrorMessage(value, 'Expected a boolean.'), util.errors.type);
+        return prefix + util.valueErrorMessage(value, 'Expected a boolean.');
     }
 
     return null;
@@ -60,6 +60,7 @@ TypedBoolean.prototype.normalize = function (value) {
     return !!value;
 };
 
-TypedBoolean.errors = {
-
+TypedBoolean.register = {
+    aliases: ['boolean', Boolean],
+    dependencies: []
 };

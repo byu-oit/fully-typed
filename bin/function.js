@@ -1,6 +1,6 @@
 /**
  *  @license
- *    Copyright 2016 Brigham Young University
+ *    Copyright 2017 Brigham Young University
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -31,15 +31,13 @@ function TypedFunction (config) {
 
     if (config.hasOwnProperty('minArguments') && (!util.isInteger(config.minArguments) || config.minArguments < 0)) {
         const message = util.propertyErrorMessage('minArguments', config.minArguments, 'Expected a non-negative integer.');
-        const err = Error(message);
-        util.throwWithMeta(err, util.errors.config);
+        throw Error(message);
     }
     const min = config.hasOwnProperty('minArguments') ? config.minArguments : 0;
 
     if (config.hasOwnProperty('maxArguments') && (!util.isInteger(config.maxArguments) || config.maxArguments < min)) {
         const message = util.propertyErrorMessage('minArguments', config.maxArguments, 'Expected a integer greater than minArgument value of ' + min + '.');
-        const err = Error(message);
-        util.throwWithMeta(err, util.errors.config);
+        throw Error(message);
     }
 
     // define properties
@@ -83,38 +81,24 @@ function TypedFunction (config) {
 TypedFunction.prototype.error = function (value, prefix) {
 
     if (typeof value !== 'function' || (this.named && !value.name)) {
-        const expected = 'Expected a ' + (this.named ? 'named ' : '') + ' function.';
-        const err = typeof value !== 'function' ? util.errors.type : TypedFunction.errors.named;
-        return util.errish(prefix + util.valueErrorMessage(value, expected), err);
+        const expected = 'Expected a ' + (this.named ? 'named ' : '') + 'function.';
+        return prefix + util.valueErrorMessage(value, expected);
     }
 
     if (typeof this.minArguments !== 'undefined' && value.length < this.minArguments) {
         const expected = 'Expected the function to have at least ' + this.minArguments + ' parameter' + (this.minArguments !== 1 ? 's' : '') + '.';
-        return util.errish(prefix + util.valueErrorMessage(value, expected), TypedFunction.errors.minArguments);
+        return prefix + util.valueErrorMessage(value, expected);
     }
 
     if (typeof this.maxArguments !== 'undefined' && value.length > this.maxArguments) {
-        const expected = 'Expected the function to have at most ' + this.maxArguments + ' parameters.';
-        return util.errish(prefix + util.valueErrorMessage(value, expected), TypedFunction.errors.maxArguments);
+        const expected = 'Expected the function to have at most ' + this.maxArguments + ' parameter' + (this.maxArguments !== 1 ? 's' : '') + '.';
+        return prefix + util.valueErrorMessage(value, expected);
     }
 
     return null;
 };
 
-TypedFunction.errors = {
-    maxArguments: {
-        code: 'EFMAX',
-        explanation: 'The function signature specifies more arguments then the allowable max.',
-        summary: 'The function defines too many parameters.'
-    },
-    minArguments: {
-        code: 'EFMIN',
-        explanation: 'The function signature specifies less arguments then the allowable min.',
-        summary: 'The function defines too few parameters.'
-    },
-    named: {
-        code: 'EFNAM',
-        explanation: 'The function must be named.',
-        summary: 'The function must be named.'
-    },
+TypedFunction.register = {
+    aliases: ['function', Function],
+    dependencies: []
 };

@@ -1,6 +1,6 @@
 /**
  *  @license
- *    Copyright 2016 Brigham Young University
+ *    Copyright 2017 Brigham Young University
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -16,7 +16,13 @@
  **/
 'use strict';
 const crypto            = require('crypto');
+const Typed             = require('./typed');
 const util              = require('./util');
+
+/**
+ * A controller data store object.
+ * @typedef {{ alias: string, aliases: *[], controller: Function, controllers: Function[], errorFunctions: Function[], dependencies: *[], normalizeFunctions: Function[] }} ControllerData
+ */
 
 module.exports = Controllers;
 
@@ -29,137 +35,6 @@ function Controllers() {
     const factory = Object.create(Controllers.prototype);
     const store = new Map();
     const dependencies = new Map();
-    const instances = new WeakMap();
-
-    /**
-     * Define a controller that manages schemas.
-     * @name Controllers#define
-     * @param {Array} aliases
-     * @param {Function} controller
-     * @param {string[]} [inherits=[]]
-     */
-    factory.define = function(aliases, controller, inherits) {
-
-        // validate input
-        if (!Array.isArray(aliases)) aliases = [aliases];
-        aliases.forEach(alias => {
-            if (store.has(alias)) throw Error('The specified alias is already in use: ' + alias);
-        });
-        if (typeof controller !== 'function') throw Error('Controller must be a function: Received: ' + controller);
-        if (arguments.length < 3) inherits = [];
-        if (!Array.isArray(inherits)) throw Error('Controller inherits must be an array.');
-        inherits.forEach(inherit => {
-            if (!store.has(inherit)) throw Error('Cannot inherit from undefined controller: ' + inherit);
-        });
-
-        const ctrls = [];
-        const errorFunctions = [];
-        const normalizeFunctions = [];
-        const firstStringAlias = aliases.filter(a => typeof a === 'string')[0];
-
-        // verify that inherits exist already and build inheritance arrays
-        inherits.forEach(function(inherit) {
-            const ctrl = store.get(inherit).controller;
-            const proto = ctrl.prototype;
-
-            ctrls.push(ctrl);
-            if (proto.hasOwnProperty('error')) errorFunctions.push(proto.error);
-            if (proto.hasOwnProperty('normalize')) normalizeFunctions.push(proto.normalize);
-        });
-        ctrls.push(controller);
-        if (controller.prototype.hasOwnProperty('error')) errorFunctions.push(controller.prototype.error);
-        if (controller.prototype.hasOwnProperty('normalize')) normalizeFunctions.push(controller.prototype.normalize);
-
-        /**
-         * Create a schema instance.
-         * @param {object} config The configuration for the schema.
-         * @param {object} schema The schema controller.
-         * @constructor
-         */
-        function Schema(config, schema) {
-            const length = ctrls.length;
-            const extended = config.hasOwnProperty('__') ? config.__ : {};
-            this.Schema = schema;
-
-            // apply controllers to this schema
-            for (let i = 0; i < length; i++) ctrls[i].call(this, config);
-
-            // add additional properties
-            if (util.isPlainObject(extended.properties)) Object.defineProperties(this, extended.properties);
-
-            // create a hash
-            const protect = {};
-            const options = getNormalizedSchemaConfiguration(this);
-            protect.hash = crypto
-                .createHash('sha256')
-                .update(Object.keys(options)
-                    .map(key => {
-                        const value = options[key];
-                        if (typeof value === 'function') return value.toString();
-                        if (typeof value === 'object') return JSON.stringify(value);
-                        return value;
-                    })
-                    .join('')
-                )
-                .digest('hex');
-
-            // store the protected data
-            instances.set(this, protect);
-        }
-
-        Schema.prototype.error = function(value, prefix) {
-            if (!prefix) prefix = '';
-            const length = errorFunctions.length;
-            for (let i = 0; i < length; i++) {
-                const err = errorFunctions[i].call(this, value, prefix);
-                if (err) return err;
-            }
-            return null;
-        };
-
-        Schema.prototype.hash = function() {
-            return instances.has(this) ? instances.get(this).hash : ''
-        };
-
-        Schema.prototype.normalize = function(value) {
-            if (typeof value === 'undefined' && this.hasDefault) value = this.default;
-            this.validate(value);
-            const length = normalizeFunctions.length;
-            for (let i = 0; i < length; i++) {
-                value = normalizeFunctions[i].call(this, value);
-            }
-            return value;
-        };
-
-        Schema.prototype.toJSON = function() {
-            const options = getNormalizedSchemaConfiguration(this);
-            if (typeof options.type === 'function') options.type = options.type.name || firstStringAlias || 'anonymous';
-            return options;
-        };
-
-        Schema.prototype.validate = function(value, prefix) {
-            const o = this.error(value, prefix);
-            if (o) {
-                const err = Error(o.message);
-                util.throwWithMeta(err, o);
-            }
-        };
-
-        // store data
-        const data = {
-            aliases: aliases,
-            controller: controller,
-            inherits: inherits,
-            Schema: Schema
-        };
-        aliases.forEach(alias => store.set(alias, data));
-        inherits.forEach(inherit => {
-            const key = store.get(inherit);
-            const items = dependencies.get(key) || [];
-            items.push(data);
-            if (!dependencies.has(key)) dependencies.set(key, items);
-        });
-    };
 
     /**
      * Delete a registered schema controller. If it cannot be deleted due to this being a dependency for other controllers
@@ -170,29 +45,23 @@ function Controllers() {
     factory.delete = function(alias) {
         if (store.has(alias)) {
             const data = store.get(alias);
+            if (data.controller === Typed) throw Error('Cannot delete core controller: Typed');
+
             const items = dependencies.get(data);
             if (items && items.length > 0) {
-                const err = Error('Cannot delete controller definition due to dependencies on this definition.');
-                err.dependencies = items.map(v => {
-                    return {
-                        aliases: v.aliases.slice(0),
-                        controller: v.controller,
-                        inherits: v.inherits.slice(0),
-                        Schema: v.Schema
-                    };
-                });
+                const names = items.map(v => v.alias);
+                const err = Error('Cannot delete controller definition due to dependencies on this definition: ' + names.join(', '));
+                err.dependencies = items;
                 throw err;
             }
 
             data.aliases.forEach(alias => store.delete(alias));
-            data.inherits.forEach(inherit => {
-                const key = store.get(inherit);
+            data.dependencies.forEach(dependency => {
+                const key = store.get(dependency);
                 const items = dependencies.get(key);
-                if (items) {
-                    const index = items.indexOf(data);
-                    if (index !== -1) items.splice(index, 1);
-                    if (items.length === 0) dependencies.delete(key);
-                }
+                const index = items.indexOf(data);
+                items.splice(index, 1);
+                if (items.length === 0) dependencies.delete(key);
             });
         }
     };
@@ -200,17 +69,10 @@ function Controllers() {
     /**
      * @name Controllers#get
      * @param {*} alias
-     * @returns {null|{aliases: Array, controller: Function, inherits: Array, Schema: Function}}
+     * @returns {null,ControllerData}
      */
     factory.get = function(alias) {
-        if (!store.has(alias)) return null;
-        const item = store.get(alias);
-        return {
-            aliases: item.aliases.slice(0),
-            controller: item.controller,
-            inherits: item.inherits.slice(0),
-            Schema: item.Schema
-        };
+        return store.get(alias) || null;
     };
 
     /**
@@ -220,6 +82,20 @@ function Controllers() {
      */
     factory.has = function(alias) {
         return store.has(alias);
+    };
+
+    /**
+     * Determine if two aliases are for the same controller.
+     * @param {*} alias1
+     * @param {*} alias2
+     * @returns {boolean}
+     */
+    factory.is = function(alias1, alias2) {
+        if (alias1 === alias2) return true;
+        if (!store.has(alias1) || !store.has(alias2)) return false;
+        const item1 = store.get(alias1);
+        const item2 = store.get(alias2);
+        return item1.controller === item2.controller;
     };
 
     /**
@@ -243,14 +119,87 @@ function Controllers() {
         return result;
     };
 
-    return factory;
-}
+    /**
+     * Register a typed controller.
+     * @name Controllers#register
+     * @param {Function} controller
+     */
+    factory.register = function(controller) {
 
-function getNormalizedSchemaConfiguration(obj) {
-    return Object.getOwnPropertyNames(obj)
-        .filter(k => k !== 'Schema')
-        .reduce((prev, key) => {
-            prev[key] = obj[key];
-            return prev;
-        }, {});
+        // validate controller
+        if (typeof controller !== 'function') throw Error('The controller to register must be a constructor function. Received: ' + controller);
+        if (!controller.register || typeof controller.register !== 'object') throw Error('The controller must have a static property "register" that defines aliases and dependencies.');
+        if (!Array.isArray(controller.register.aliases) || controller.register.aliases.length === 0) throw Error('The controller register aliases must be a non-empty array of aliases.');
+        if (controller.register.hasOwnProperty('dependencies') && !Array.isArray(controller.register.dependencies)) throw Error('The controller register dependencies must be an array.');
+
+        // store aliases and dependencies
+        const aliases = controller.register.aliases;
+        const inherits = controller.register.dependencies || [];
+
+        // validate that aliases do not exist
+        aliases.forEach(alias => {
+            if (store.has(alias)) throw Error('The specified alias is already in use: ' + alias);
+        });
+
+        // validate that dependencies exist
+        inherits.forEach(dependency => {
+            if (!store.has(dependency)) throw Error('Controller dependency not defined: ' + dependency);
+        });
+
+        const controllers = [ Typed ];
+        const errorFunctions = [ Typed.prototype.error ];
+        const normalizeFunctions = [ Typed.prototype.normalize ];
+
+        // build controllers and inheritance arrays
+        inherits.forEach(function(dependency) {
+            const ctrl = store.get(dependency).controller;
+            const proto = ctrl.prototype;
+
+            if (ctrl !== Typed) {
+                controllers.push(ctrl);
+                if (proto.hasOwnProperty('error')) errorFunctions.push(proto.error);
+                if (proto.hasOwnProperty('normalize')) normalizeFunctions.push(proto.normalize);
+            }
+        });
+        if (controller !== Typed) {
+            controllers.push(controller);
+            if (controller.prototype.hasOwnProperty('error')) errorFunctions.push(controller.prototype.error);
+            if (controller.prototype.hasOwnProperty('normalize')) normalizeFunctions.push(controller.prototype.normalize);
+        }
+
+        // create data object to store
+        const data = {
+            alias: aliases
+                .map(a => typeof a === 'function' ? a.name : a)
+                .filter(a => typeof a === 'string' && a.length > 0)[0] || 'undefined',
+            aliases: aliases,
+            controller: controller,
+            controllers: controllers,
+            errorFunctions: errorFunctions,
+            dependencies: inherits,
+            normalizeFunctions: normalizeFunctions
+        };
+        Object.freeze(data.aliases);
+        Object.freeze(data.controllers);
+        Object.freeze(data.errorFunctions);
+        Object.freeze(data.dependencies);
+        Object.freeze(data.normalizeFunctions);
+
+        // store data for each alias
+        aliases.forEach(alias => store.set(alias, data));
+
+        // link dependency to this controller
+        inherits.forEach(inherit => {
+            const key = store.get(inherit);
+            const items = dependencies.get(key) || [];
+            items.push(data);
+            if (!dependencies.has(key)) dependencies.set(key, items);
+        });
+
+    };
+
+    // register Typed
+    factory.register(Typed);
+
+    return factory;
 }

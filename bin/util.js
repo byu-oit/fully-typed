@@ -1,6 +1,6 @@
 /**
  *  @license
- *    Copyright 2016 Brigham Young University
+ *    Copyright 2017 Brigham Young University
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -20,12 +20,6 @@ const vowels = ['a', 'e', 'i', 'o', 'u'];
 exports.aOrAn = function(word) {
     const ch1 = word.substr(0, 1).toLowerCase();
     return (vowels.indexOf(ch1) === -1 ? 'a' : 'an') + ' ' + word;
-};
-
-exports.applyErrorMeta = function(err, meta) {
-    err.code = meta.code;
-    err.explanation = meta.explanation;
-    err.summary = meta.summary;
 };
 
 exports.copy = function(value) {
@@ -63,23 +57,6 @@ exports.errors = {
     }
 };
 
-exports.errish = function(message, meta) {
-    const err = { message: message };
-    exports.applyErrorMeta(err, meta);
-    err.toString = function() { return err.message };
-    return err;
-};
-
-exports.extractError = function (callback) {
-    let err = {};
-    try {
-        callback();
-    } catch (e) {
-        err = e;
-    }
-    return err;
-};
-
 exports.isInteger = function (value) {
     return exports.isNumber(value) && value === Math.round(value);
 };
@@ -96,24 +73,11 @@ exports.isPlainObject = function (value) {
 };
 
 exports.isValidSchemaConfiguration = function(value) {
-    if (Array.isArray(value)) {
-        const length = value.length;
-        for (let i = 0; i < length; i++) {
-            if (!exports.isPlainObject(value[i])) return false;
-        }
-        return true;
-    } else {
-        return exports.isPlainObject(value);
-    }
+    return exports.isPlainObject(value);
 };
 
 exports.propertyErrorMessage = function (property, actual, expected) {
     return 'Invalid configuration value for property: ' + property + '. ' + expected + ' Received: ' + quoteWrap(actual);
-};
-
-exports.throwWithMeta = function(err, meta) {
-    exports.applyErrorMeta(err, meta);
-    throw err;
 };
 
 exports.valueErrorMessage = function(actual, expected) {

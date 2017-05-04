@@ -1,6 +1,6 @@
 /**
  *  @license
- *    Copyright 2016 Brigham Young University
+ *    Copyright 2017 Brigham Young University
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 'use strict';
 const expect            = require('chai').expect;
 const Schema            = require('../index');
-const util              = require('../bin/util');
 
 describe('TypedBoolean', () => {
 
@@ -39,7 +38,7 @@ describe('TypedBoolean', () => {
 
         it('strict requires boolean', () => {
             const b = Schema({ type: Boolean, strict: true });
-            expect(b.error(123).code).to.equal(util.errors.type.code);
+            expect(b.error(123)).to.match(/Expected a boolean/);
         });
 
         it('not strict does not require boolean', () => {

@@ -1,6 +1,6 @@
 /**
  *  @license
- *    Copyright 2016 Brigham Young University
+ *    Copyright 2017 Brigham Young University
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -32,23 +32,20 @@ function TypedString (config) {
     // validate min length
     if (config.hasOwnProperty('minLength') && (!util.isInteger(config.minLength) || config.minLength < 0)) {
         const message = util.propertyErrorMessage('minLength', config.minLength, 'Must be an integer that is greater than or equal to zero.');
-        const err = Error(message);
-        util.throwWithMeta(err, util.errors.config);
+        throw Error(message);
     }
     const minLength = config.hasOwnProperty('minLength') ? config.minLength : 0;
 
     // validate max length
     if (config.hasOwnProperty('maxLength') && (!util.isInteger(config.maxLength) || config.maxLength < minLength)) {
         const message = util.propertyErrorMessage('maxLength', config.maxLength, 'Must be an integer that is greater than or equal to the minLength.');
-        const err = Error(message);
-        util.throwWithMeta(err, util.errors.config);
+        throw Error(message);
     }
 
     // validate pattern
     if (config.hasOwnProperty('pattern') && !(config.pattern instanceof RegExp)) {
         const message = util.propertyErrorMessage('pattern', config.pattern, 'Must be a regular expression object.');
-        const err = Error(message);
-        util.throwWithMeta(err, util.errors.config);
+        throw Error(message);
     }
 
     // define properties
@@ -92,41 +89,28 @@ function TypedString (config) {
 TypedString.prototype.error = function (value, prefix) {
 
     if (typeof value !== 'string') {
-        return util.errish(prefix + util.valueErrorMessage(value, 'Expected a string.'), util.errors.type);
+        return prefix + util.valueErrorMessage(value, 'Expected a string.');
     }
 
     if (typeof this.minLength !== 'undefined' && value.length < this.minLength) {
-        return util.errish(prefix + 'Invalid string length. Must contain at least ' +
-            this.minLength + ' characters. Contains ' + value.length, TypedString.errors.min);
+        return prefix + 'Invalid string length. Must contain at least ' +
+            this.minLength + ' characters. Contains ' + value.length;
     }
 
     if (typeof this.maxLength !== 'undefined' && value.length > this.maxLength) {
-        return util.errish(prefix + 'Invalid string length. Must contain at most '
-            + this.maxLength + ' items. Contains ' + value.length, TypedString.errors.max);
+        return prefix + 'Invalid string length. Must contain at most '
+            + this.maxLength + ' items. Contains ' + value.length;
     }
 
     if (this.pattern && !this.pattern.test(value)) {
-        return util.errish(prefix + 'Invalid string. Does not match required pattern ' +
-            this.pattern.toString() + ' with value: ' + value, TypedString.errors.pattern);
+        return prefix + 'Invalid string. Does not match required pattern ' +
+            this.pattern.toString() + ' with value: ' + value;
     }
 
     return null;
 };
 
-TypedString.errors = {
-    max: {
-        code: 'ESMAX',
-        explanation: 'The string has too many characters to meet the max length requirement.',
-        summary: 'String too long.'
-    },
-    min: {
-        code: 'ESMIN',
-        explanation: 'The string has too few characters to meet the min length requirement.',
-        summary: 'String too short.'
-    },
-    pattern: {
-        code: 'ESPAT',
-        explanation: 'The string does not match the regular expression pattern.',
-        summary: 'String does not match pattern.'
-    }
+TypedString.register = {
+    aliases: ['string', String],
+    dependencies: []
 };

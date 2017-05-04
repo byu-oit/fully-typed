@@ -1,6 +1,6 @@
 /**
  *  @license
- *    Copyright 2016 Brigham Young University
+ *    Copyright 2017 Brigham Young University
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  *    limitations under the License.
  **/
 'use strict';
+const FullyTyped        = require('./fully-typed');
 const util              = require('./util');
 
 module.exports = Typed;
@@ -32,8 +33,7 @@ function Typed (config) {
     // enum
     if (config.hasOwnProperty('enum')) {
         if (!Array.isArray(config.enum) || config.enum.length === 0) {
-            const err = Error(util.propertyErrorMessage('enum', config.enum, 'Expected a non-empty array'));
-            util.throwWithMeta(err, Typed.errors.config);
+            throw Error(util.propertyErrorMessage('enum', config.enum, 'Expected a non-empty array'));
         }
         const copy = [];
         config.enum.forEach(function(v) {
@@ -44,14 +44,12 @@ function Typed (config) {
 
     // transform
     if (config.transform && typeof config.transform !== 'function') {
-        const err = Error(util.propertyErrorMessage('transform', config.transform, 'Expected a function'));
-        util.throwWithMeta(err, Typed.errors.config);
+        throw Error(util.propertyErrorMessage('transform', config.transform, 'Expected a function'));
     }
 
     // validate
     if (config.validator && typeof config.validator !== 'function') {
-        const err = Error(util.propertyErrorMessage('validator', config.validator, 'Expected a function'));
-        util.throwWithMeta(err, Typed.errors.config);
+        throw Error(util.propertyErrorMessage('validator', config.validator, 'Expected a function'));
     }
 
     // define properties
@@ -137,16 +135,16 @@ Typed.prototype.error = function(value, prefix) {
     // validate the enum
     if (this.enum && this.enum.indexOf(value) === -1) {
         const expects = '. Expected one of: [' + this.enum.join(', ') + ']';
-        return util.errish(prefix + util.valueErrorMessage(value, expects), Typed.errors.enum);
+        return prefix + util.valueErrorMessage(value, expects);
     }
 
     // run validate function
     if (this.validator) {
         const valid = this.validator(value);
         const message = !valid || typeof valid === 'string'
-            ? prefix + util.valueErrorMessage(value, !valid ? this.help : valid)
+            ? prefix + util.valueErrorMessage(value, !valid ? 'Validator did not pass.' : valid)
             : '';
-        if (message) return util.errish(message, Typed.errors.validate);
+        if (message) return message;
     }
 
     return null;
@@ -157,35 +155,11 @@ Typed.prototype.error = function(value, prefix) {
  * @param {*} value
  */
 Typed.prototype.normalize = function(value) {
-    if (this.hasDefault && typeof value === 'undefined') value = this.default;
+    // if (this.hasDefault && typeof value === 'undefined') value = this.default; - default applied by schema prior to validation
     return this.transform ? this.transform(value) : value;
 };
 
-/**
- * This will be overwritten when defined as a schema.
- * @type {Object<string, Function>}
- */
-Typed.prototype.Schema = {};
-
-/**
- * If a value is not valid then throw an error.
- * @param {*} value A value to test.
- * @param {string} [prefix=''] A string to add to the beginning of any errors.
- * @throws {Error}
- */
-Typed.prototype.validate = function(value, prefix) {};
-
-Typed.errors = {
-    config: util.errors.config,
-    enum: {
-        code: 'ETENM',
-        explanation: 'The value does not match any of the specified enum values.',
-        summary: 'Value not in enum.'
-    },
-    type: util.errors.type,
-    validate: {
-        code: 'ETVLD',
-        explanation: 'The value was run through the validate function supplied in the configuration and did not pass.',
-        summary: 'Did not pass validation.'
-    }
+Typed.register = {
+    aliases: ['typed', FullyTyped.Typed],
+    dependencies: []
 };

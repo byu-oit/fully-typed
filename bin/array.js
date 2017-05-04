@@ -1,6 +1,6 @@
 /**
  *  @license
- *    Copyright 2016 Brigham Young University
+ *    Copyright 2017 Brigham Young University
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  *    limitations under the License.
  **/
 'use strict';
+const FullyTyped            = require('./fully-typed');
 const util                  = require('./util');
 
 module.exports = TypedArray;
@@ -28,23 +29,20 @@ module.exports = TypedArray;
  */
 function TypedArray (config) {
     const array = this;
-    const Schema = this.Schema;
 
     // validate min items
     if (config.hasOwnProperty('minItems') && (!util.isInteger(config.minItems) || config.minItems < 0)) {
-        const err = Error('Invalid configuration value for property: minItems. Must be an integer that is greater than or equal to zero. Received: ' + config.minItems);
-        util.throwWithMeta(err, util.errors.config);
+        throw Error('Invalid configuration value for property: minItems. Must be an integer that is greater than or equal to zero. Received: ' + config.minItems);
     }
     const minItems = config.hasOwnProperty('minItems') ? config.minItems : 0;
 
     // validate max items
     if (config.hasOwnProperty('maxItems') && (!util.isInteger(config.maxItems) || config.maxItems < minItems)) {
-        const err = Error('Invalid configuration value for property: maxItems. Must be an integer that is greater than or equal to the minItems. Received: ' + config.maxItems);
-        util.throwWithMeta(err, util.errors.config);
+        throw Error('Invalid configuration value for property: maxItems. Must be an integer that is greater than or equal to the minItems. Received: ' + config.maxItems);
     }
 
     // validate schema
-    if (config.hasOwnProperty('schema')) config.schema = Schema(config.schema);
+    if (config.hasOwnProperty('schema')) config.schema = FullyTyped(config.schema);
 
     // define properties
     Object.defineProperties(array, {
@@ -97,17 +95,15 @@ function TypedArray (config) {
 TypedArray.prototype.error = function(value, prefix) {
 
     if (!Array.isArray(value)) {
-        return util.errish(prefix + util.valueErrorMessage(value, 'Expected an array.'), util.errors.type);
-    }
-
-    if (typeof this.minItems !== 'undefined' && value.length < this.minItems) {
-        return util.errish(prefix + 'Invalid array length. Must contain at least ' +
-            this.minItems + ' items. Contains ' + value.length, TypedArray.errors.min);
+        return prefix + util.valueErrorMessage(value, 'Expected an array.');
     }
 
     if (typeof this.maxItems !== 'undefined' && value.length > this.maxItems) {
-        return util.errish(prefix + 'Invalid array length. Must contain at most '
-            + this.maxItems + ' items. Contains ' + value.length, TypedArray.errors.max);
+        return prefix + 'Invalid array length. Must contain at most ' + this.maxItems + ' items. Contains ' + value.length;
+    }
+
+    if (typeof this.minItems !== 'undefined' && value.length < this.minItems) {
+        return prefix + 'Invalid array length. Must contain at least ' + this.minItems + ' items. Contains ' + value.length;
     }
 
     if (this.uniqueItems) {
@@ -123,8 +119,7 @@ TypedArray.prototype.error = function(value, prefix) {
             }
         });
         if (duplicates.length > 0) {
-            return util.errish(prefix + 'Invalid array. All items must be unique. Duplicates found at indexes: [ ' +
-                duplicates.map(function(v) { return v.toString(); }).join('], [') + ' ]', TypedArray.errors.unique);
+            return prefix + 'Invalid array. All items must be unique. Duplicates found at indexes: [ ' + duplicates.join('], [') + ' ]';
         }
     }
 
@@ -133,17 +128,11 @@ TypedArray.prototype.error = function(value, prefix) {
         const schema = this.schema;
         value.forEach(function(v, i) {
             const err = schema.error(v, 'At index ' + i + ': ');
-            if (err) {
-                err.index = i;
-                errors.push(err);
-            }
+            if (err) errors.push(err);
         });
         if (errors.length > 0) {
             const count = errors.length === 1 ? 'One error' : 'Multiple errors';
-            const err = util.errish(prefix + count + ' with items in the array:\n  ' +
-                errors.map(function(e) { return e.toString() }).join('\n  '), TypedArray.errors.items);
-            err.errors = errors;
-            return err;
+            return prefix + count + ' with items in the array:\n  ' + errors.join('\n  ');
         }
     }
     
@@ -155,25 +144,7 @@ TypedArray.prototype.normalize = function(value) {
     return value.map(v => schema.normalize(v));
 };
 
-TypedArray.errors = {
-    items: {
-        code: 'EAITM',
-        explanation: 'One or more items in the array do not match the specified typed definition.',
-        summary: 'One or more invalid array items.'
-    },
-    max: {
-        code: 'EAMAX',
-        explanation: 'The array has too many items to meet the maximum requirement.',
-        summary: 'Too many array items.'
-    },
-    min: {
-        code: 'EAMIN',
-        explanation: 'The array does not have enough items to meet the minimum requirement.',
-        summary: 'Too few array items.'
-    },
-    unique: {
-        code: 'EAUNQ',
-        explanation: 'The items in the array must be unique.',
-        summary: 'Array items must be unique.'
-    }
+TypedArray.register = {
+    aliases: ['array', Array],
+    dependencies: []
 };

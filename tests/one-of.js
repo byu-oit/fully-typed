@@ -1,6 +1,6 @@
 /**
  *  @license
- *    Copyright 2016 Brigham Young University
+ *    Copyright 2017 Brigham Young University
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -17,21 +17,31 @@
 'use strict';
 const expect            = require('chai').expect;
 const Schema            = require('../index');
-const util              = require('../bin/util');
 
 describe('one of schemas', () => {
+
+    it('must have oneOf property', () => {
+        expect(() => Schema({ type: 'one-of' })).to.throw(/Missing required one-of property/);
+    });
+
+    it('oneOf property must be an array of objects', () => {
+        expect(() => Schema({ type: 'one-of', oneOf: ['foo'] })).to.throw(/Must be an array of schema configurations/);
+    });
 
     describe('string or number', () => {
         let schema;
 
-        before(() => schema = Schema([
-            {
-                type: String
-            },
-            {
-                type: Number
-            }
-        ]));
+        before(() => schema = Schema({
+            type: 'one-of',
+            oneOf: [
+                {
+                    type: String
+                },
+                {
+                    type: Number
+                }
+            ]
+        }));
 
         it('can be a string', () => {
             const err = schema.error('foo');
@@ -45,17 +55,15 @@ describe('one of schemas', () => {
 
         it('cannot be a boolean', () => {
             const err = schema.error(true);
-            expect(err.code).to.equal(util.errors.multi.code);
+            expect(err).to.match(/All possible schemas have errors/);
         });
 
         it('cannot be an object', () => {
-            const err = util.extractError(() => schema.validate({}) );
-            expect(err.code).to.equal(util.errors.multi.code);
+            expect(() => schema.validate({})).to.throw(/All possible schemas have errors/);
         });
 
         it('normalize error', () => {
-            const err = util.extractError(() => schema.normalize({}) );
-            expect(err.code).to.equal(util.errors.multi.code);
+            expect(() => schema.normalize({})).to.throw(/All possible schemas have errors/);
         });
 
     });

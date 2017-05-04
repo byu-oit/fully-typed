@@ -26,7 +26,7 @@ function add(a, b) {
     a = schema.normalize(a);
     b = schema.normalize(b);
     return a + b;
-};
+}
 
 
 console.log(add(1, 5));         // 6

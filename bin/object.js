@@ -1,6 +1,6 @@
 /**
  *  @license
- *    Copyright 2016 Brigham Young University
+ *    Copyright 2017 Brigham Young University
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  *    limitations under the License.
  **/
 'use strict';
+const FullyTyped            = require('./fully-typed');
 const util                  = require('./util');
 
 module.exports = TypedObject;
@@ -28,24 +29,23 @@ module.exports = TypedObject;
  */
 function TypedObject (config) {
     const object = this;
-    const Schema = this.Schema;
     const allowNull = config.hasOwnProperty('allowNull') ? !!config.allowNull : true;
     const hasProperties = config.hasOwnProperty('properties');
 
     if (hasProperties && !util.isValidSchemaConfiguration(config.properties)) {
-        const message = util.propertyErrorMessage('properties', config.properties, 'Must be a plain object or an array of plain objects.');
-        const err = Error(message);
-        util.throwWithMeta(err, util.errors.config);
+        const message = util.propertyErrorMessage('properties', config.properties, 'Must be a plain object.');
+        throw Error(message);
     }
 
     if (config.hasOwnProperty('schema')) {
         if (!util.isValidSchemaConfiguration(config.schema)) {
-            const message = util.propertyErrorMessage('schema', config.schema, 'Must be a plain object or an array of plain objects.');
-            const err = Error(message);
-            util.throwWithMeta(err, util.errors.config);
+            const message = util.propertyErrorMessage('schema', config.schema, 'Must be a plain object.');
+            throw Error(message);
         }
         validateSchemaConfiguration('schema', config.schema);
     }
+
+    const schemaIsNotOneOf = config.hasOwnProperty('schema') ? !FullyTyped.controllers.is('one-of', config.schema.type) : true;
 
     Object.defineProperties(object, {
 
@@ -85,7 +85,7 @@ function TypedObject (config) {
              * @name TypedObject#schema
              * @type {object, undefined}
              */
-            value: config.schema ? Schema(mergeSchemas(config.schema)) : undefined,
+            value: config.schema ? FullyTyped(mergeSchemas(config.schema)) : undefined,
             writable: false
         }
 
@@ -95,47 +95,45 @@ function TypedObject (config) {
     Object.keys(object.properties)
         .forEach(function(key) {
             let options = object.properties[key] || {};
-            const optionsIsPlain = !Array.isArray(options);
-            const schemaIsPlain = !Array.isArray(config.schema);
+            const optionsIsNotOneOf = !FullyTyped.controllers.is('one-of', options.type);
 
             if (!util.isValidSchemaConfiguration(options)) {
-                const err = Error('Invalid configuration for property: ' + key + '. Must be a plain object.');
-                util.throwWithMeta(err, util.errors.config);
+                throw Error('Invalid configuration for property: ' + key + '. Must be a plain object.');
             }
 
             // merge generic schema with property specific schemas
             if (config.schema) {
-                if (schemaIsPlain && optionsIsPlain) {
+                if (schemaIsNotOneOf && optionsIsNotOneOf) {
                     options = mergeSchemas(config.schema, options);
-                } else if (schemaIsPlain) {
-                    options = options.map(item => mergeSchemas(config.schema, item));
-                } else if (optionsIsPlain) {
-                    options = config.schema.map(item => mergeSchemas(item, options));
+                } else if (schemaIsNotOneOf) {
+                    options.oneOf = options.oneOf.map(item => mergeSchemas(config.schema, item));
+                } else if (optionsIsNotOneOf) {
+                    options.oneOf = config.schema.oneOf.map(item => mergeSchemas(item, options));
+                    options.type = 'one-of';
                 } else {
                     const array = [];
-                    for (let i = 0; i < options.length; i++) {
-                        for (let j = 0; j < config.schema.length; j++) {
-                            array.push(mergeSchemas(config.schema[j], options[i]));
+                    const optionsLength = options.oneOf.length;
+                    const schemaLength = config.schema.oneOf.length;
+                    for (let i = 0; i < optionsLength; i++) {
+                        for (let j = 0; j < schemaLength; j++) {
+                            array.push(mergeSchemas(config.schema.oneOf[j], options.oneOf[i]));
                         }
                     }
-                    options = array;
+                    options.oneOf = array;
+                    options.type = 'one-of';
                 }
-            } else if (optionsIsPlain) {
-                options = mergeSchemas(options);
+            } else if (optionsIsNotOneOf) {
+                extend(options);
             } else {
-                options = options.map(o => mergeSchemas(o));
+                options.oneOf.forEach(item => extend(item));
             }
 
             // create a schema instance for each property
-            const schema = Schema(options);
+            const schema = FullyTyped(options);
             object.properties[key] = schema;
 
-            if (Array.isArray(options)) {
-                schema.schemas.forEach((s, i) => validateSchemaConfiguration(key, s))
-            } else {
-                validateSchemaConfiguration(key, schema);
-            }
-
+            // validate that not required and has default
+            validateSchemaConfiguration(key, schema);
         });
 
     return object;
@@ -144,12 +142,15 @@ function TypedObject (config) {
 TypedObject.prototype.error = function(value, prefix) {
 
     if (typeof value !== 'object') {
-        return util.errish(prefix + util.valueErrorMessage(value, 'Expected an object.'), util.errors.type);
+        return prefix + util.valueErrorMessage(value, 'Expected an object.');
     }
 
     if (!value && !this.allowNull) {
-        return util.errish(prefix + 'Object cannot be null.', TypedObject.errors.null);
+        return prefix + 'Object cannot be null.';
     }
+
+    // null allowed - no other tests make a difference
+    if (!value) return null;
 
     const errors = [];
     const object = this;
@@ -159,36 +160,27 @@ TypedObject.prototype.error = function(value, prefix) {
         .forEach(function(key) {
             const schema = object.properties[key];
             if (schema.required && !value.hasOwnProperty(key)) {
-                const err = util.errish('Missing required value for property: ' + key, TypedObject.errors.required);
-                err.property = key;
+                const err = 'Missing required value for property: ' + key;
                 errors.push(err);
             }
         });
 
     // validate each property value
-    if (value) {
-        Object.keys(value)
-            .forEach(key => {
-                const schema = object.properties.hasOwnProperty(key)
-                    ? object.properties[key]
-                    : object.schema;
-                if (!schema) return;
+    Object.keys(value)
+        .forEach(key => {
+            const schema = object.properties.hasOwnProperty(key)
+                ? object.properties[key]
+                : object.schema;
+            if (!schema) return;
 
-                // run inherited error check on property
-                const err = schema.error(value[key]);
-                if (err) {
-                    err.property = key;
-                    errors.push(err);
-                }
-            });
-    }
+            // run inherited error check on property
+            const err = schema.error(value[key]);
+            if (err) errors.push(err);
+        });
 
     if (errors.length > 0) {
         const count = errors.length === 1 ? 'One error with property' : 'Multiple errors with properties';
-        const err = util.errish(prefix + count + ' in the object:\n  ' +
-            errors.map(function(e) { return e.toString() }).join('\n  '), TypedObject.errors.properties);
-        err.errors = errors;
-        return err;
+        return prefix + count + ' in the object:\n  ' + errors.join('\n  ');
     }
 
     return null;
@@ -198,63 +190,43 @@ TypedObject.prototype.normalize = function(value) {
     const result = {};
     const object = this;
 
+    if (!value) return null;
+
     Object.keys(object.properties)
         .forEach(function(key) {
             const item = object.properties[key];
             if (item.hasDefault && !value.hasOwnProperty(key)) value[key] = item.default;
         });
 
-    if (value) {
-        Object.keys(value)
-            .forEach(function (key) {
-                if (object.properties.hasOwnProperty(key)) {
-                    const schema = object.properties[key];
-                    result[key] = schema.normalize(value[key]);
-                } else if (!object.clean) {
-                    result[key] = value[key];
-                }
-            });
-    }
+    Object.keys(value)
+        .forEach(function (key) {
+            if (object.properties.hasOwnProperty(key)) {
+                const schema = object.properties[key];
+                result[key] = schema.normalize(value[key]);
+            } else if (!object.clean) {
+                result[key] = value[key];
+            }
+        });
 
     return result;
 };
 
-TypedObject.errors = {
-    null: {
-        code: 'EONUL',
-        explanation: 'The object cannot be null.',
-        summary: 'The object cannot be null.'
-    },
-    properties: {
-        code: 'EOPRP',
-        explanation: 'One or more properties in the object have errors.',
-        summary: 'One or more errors in properties.'
-    },
-    required: {
-        code: 'EOREQ',
-        explanation: 'A required property has not been assigned a value.',
-        summary: 'Missing required property value.'
-    }
+TypedObject.register = {
+    aliases: ['object', Object],
+    dependencies: []
 };
 
 
 
 
-function mergeSchemas(general, specific) {
-    const merged = Object.assign({}, general, specific || {});
-    merged.__ = {
-        properties: {
-            required: {
-                value: !!merged.required
-            }
-        }/*,
-        error: function(value, prefix) {
-            return;
-        },
-        normalize: function(value) {
+function extend(obj) {
+    if (!obj._extension_ || typeof obj._extension_ !== 'object') obj._extension_ = {};
+    obj._extension_.required = !!obj.required;
+}
 
-        }*/
-    };
+function mergeSchemas(general, specific) {
+    const merged = Object.assign({}, general, specific);
+    extend(merged);
     return merged;
 }
 
@@ -262,7 +234,6 @@ function validateSchemaConfiguration (key, schema) {
 
     // required
     if (schema.required && schema.hasDefault) {
-        const err = Error('Invalid configuration for property: ' + key + '. Cannot make required and provide a default value.');
-        util.throwWithMeta(err, util.errors.config);
+        throw Error('Invalid configuration for property: ' + key + '. Cannot make required and provide a default value.');
     }
 }

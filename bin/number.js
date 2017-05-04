@@ -1,6 +1,6 @@
 /**
  *  @license
- *    Copyright 2016 Brigham Young University
+ *    Copyright 2017 Brigham Young University
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -32,22 +32,19 @@ function TypedNumber (config) {
     // validate min
     if (config.hasOwnProperty('min') && !util.isNumber(config.min)) {
         const message = util.propertyErrorMessage('min', config.min, 'Must be a number.');
-        const err = Error(message);
-        util.throwWithMeta(err, util.errors.config);
+        throw Error(message);
     }
 
     // validate max
     if (config.hasOwnProperty('max') && !util.isNumber(config.max)) {
         const message = util.propertyErrorMessage('max', config.max, 'Must be a number.');
-        const err = Error(message);
-        util.throwWithMeta(err, util.errors.config);
+        throw Error(message);
     }
 
     // validate max is greater than min
     if (config.hasOwnProperty('max') && config.hasOwnProperty('min') && config.min > config.max) {
         const message = util.propertyErrorMessage('max', config.max, 'Must be a number that is less than the minimum: ' + config.min + '.');
-        const err = Error(message);
-        util.throwWithMeta(err, util.errors.config);
+        throw Error(message);
     }
 
     // define properties
@@ -111,40 +108,27 @@ function TypedNumber (config) {
 TypedNumber.prototype.error = function (value, prefix) {
 
     if (typeof value !== 'number') {
-        return util.errish(prefix + util.valueErrorMessage(value, 'Expected a number.'), util.errors.type);
+        return prefix + util.valueErrorMessage(value, 'Expected a number.');
     }
 
     if (this.integer && !Number.isInteger(value)) {
-        return util.errish(prefix + 'Invalid number. Must be an integer. Received: ' + value, TypedNumber.errors.integer);
+        return prefix + 'Invalid number. Must be an integer. Received: ' + value;
     }
 
     if (typeof this.max !== 'undefined' && (value > this.max || (this.exclusiveMax && value === this.max))) {
         const extra = this.exclusiveMax ? '' : 'or equal to ';
-        return util.errish(prefix + 'Invalid number. Must be less than ' + extra + this.max + '. Received: ' + value, TypedNumber.errors.max);
+        return prefix + 'Invalid number. Must be less than ' + extra + this.max + '. Received: ' + value;
     }
 
     if (typeof this.min !== 'undefined' && (value < this.min || (this.exclusiveMin && value === this.min))) {
         const extra = this.exclusiveMin ? '' : 'or equal to ';
-        return util.errish(prefix + 'Invalid number. Must be greater than ' + extra + this.min + '. Received: ' + value, TypedNumber.errors.min);
+        return prefix + 'Invalid number. Must be greater than ' + extra + this.min + '. Received: ' + value;
     }
 
     return null;
 };
 
-TypedNumber.errors = {
-    integer: {
-        code: 'ENINT',
-        explanation: 'The number must be an integer.',
-        summary: 'Number not an integer.'
-    },
-    max: {
-        code: 'ENMAX',
-        explanation: 'The number does not meet the maximum requirement.',
-        summary: 'Number too large.'
-    },
-    min: {
-        code: 'ENMIN',
-        explanation: 'The number does not meet the minimum requirement.',
-        summary: 'Number too small.'
-    }
+TypedNumber.register = {
+    aliases: ['number', Number],
+    dependencies: []
 };

@@ -1,6 +1,6 @@
 /**
  *  @license
- *    Copyright 2016 Brigham Young University
+ *    Copyright 2017 Brigham Young University
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -15,16 +15,11 @@
  *    limitations under the License.
  **/
 'use strict';
-const Schema            = require('./bin/schema');
-const controllers       = Schema.controllers;
+const FullyTyped        = require('./bin/fully-typed');
+const register          = FullyTyped.controllers.register;
 
-module.exports = Schema;
+module.exports = FullyTyped;
 
-controllers.define(['typed'],               require('./bin/typed'));
-controllers.define(['array', Array],        require('./bin/array'),     ['typed']);
-controllers.define(['boolean', Boolean],    require('./bin/boolean'),   ['typed']);
-controllers.define(['function', Function],  require('./bin/function'),  ['typed']);
-controllers.define(['number', Number],      require('./bin/number'),    ['typed']);
-controllers.define(['object', Object],      require('./bin/object'),    ['typed']);
-controllers.define(['string', String],      require('./bin/string'),    ['typed']);
-controllers.define(['symbol', Symbol],      require('./bin/symbol'),    ['typed']);
+['array', 'boolean', 'date', 'function', 'number', 'object', 'one-of', 'string', 'symbol'].forEach(key => {
+    register(require('./bin/' + key));
+});

@@ -16,131 +16,135 @@
  **/
 'use strict';
 const crypto            = require('crypto');
+const FullyTyped        = require('./fully-typed');
 const util              = require('./util');
+
+const instances = new WeakMap();
 
 module.exports = Schema;
 
 /**
- * Get a typed schema.
- * @param {object, object[]} [configuration={}]
- * @returns {{ error: Function, normalize: Function, validate: Function }}
+ * Create a schema instance.
+ * @param {Object} config The configuration for the schema.
+ * @param {ControllerData} data
+ * @constructor
  */
-function Schema (configuration) {
-    if (arguments.length === 0 || configuration === null) configuration = {};
+function Schema(config, data) {
+    const controllers = data.controllers;
+    const length = controllers.length;
 
-    // single configuration leads to single schema
-    if (!Array.isArray(configuration)) return createSchema(configuration);
+    this.FullyTyped = FullyTyped;
 
-    // multiple configuration tries all schemas
-    const hashes = {};
-    const schemas = configuration.map((config, i) => createSchema(config))
-        .filter(schema => {
-            const hash = schema.hash();
-            if (hashes[hash]) return false;
-            hashes[hash] = true;
-            return true;
+    // apply controllers to this schema
+    for (let i = 0; i < length; i++) controllers[i].call(this, config);
+
+    // add additional properties
+    if (config._extension_ && typeof config._extension_ === 'object') {
+        const self = this;
+        Object.keys(config._extension_).forEach(function(key) {
+            self[key] = config._extension_[key];
         });
+    }
 
-    // generate the hash
-    const hash = crypto.createHash('sha256')
-        .update(schemas.map(schema => schema.hash).join(''))
+    // store protected data with schema
+    const protect = Object.assign({}, data);
+
+    // create and store hash
+    const options = getNormalizedSchemaConfiguration(this);
+    protect.hash = crypto
+        .createHash('sha256')
+        .update(JSON.stringify(prepareForHash(options)))
         .digest('hex');
-
-    const result = new MultiSchema();
-
-    result.error = function(value, prefix) {
-        const data = getPassingSchema(schemas, value);
-        return data.passing ? null : getMultiError(data.errors, prefix);
-    };
-
-    result.hash = function() {
-        return hash;
-    };
-
-    result.normalize = function(value) {
-        const data = getPassingSchema(schemas, value, '');
-        if (data.passing) return data.schema.normalize(value);
-        const meta = getMultiError(data.errors, '');
-        const err = Error(meta.message);
-        util.throwWithMeta(err, meta);
-    };
-
-    Object.defineProperty(result, 'schemas', {
-        get: () => schemas.slice(0)
-    });
-
-    result.toJSON = function() {
-        return schemas.map(schema => schema.toJSON());
-    };
-
-    result.validate = function(value, prefix) {
-        const o = this.error(value, prefix);
-        if (o) {
-            const err = Error(o.message);
-            util.throwWithMeta(err, o);
-        }
-    };
-
-    return result;
+    instances.set(this, protect);
 }
-
-Schema.controllers = require('./controllers')();
 
 /**
- * Create a schema for the provided configuration.
- * @param {object} configuration
- * @returns {{ error: Function, normalize: Function, validate: Function }}
+ * Check if a value produces any errors.
+ * @param {*} value
+ * @param {string} [prefix='']
+ * @returns {string,null}
  */
-function createSchema(configuration) {
-
-    // validate input parameter
-    if (!util.isPlainObject(configuration)) {
-        const err = Error('If provided, the schema configuration must be a plain object. Received: ' + configuration);
-        util.throwWithMeta(err, exports.errors.config);
+Schema.prototype.error = function(value, prefix) {
+    validateContext(this);
+    const errorFunctions = instances.get(this).errorFunctions;
+    if (!prefix) prefix = '';
+    const length = errorFunctions.length;
+    for (let i = 0; i < length; i++) {
+        const err = errorFunctions[i].call(this, value, prefix);
+        if (err) return err;
     }
+    return null;
+};
 
-    // get a copy of the configuration
-    const config = util.copy(configuration || {});
+/**
+ * Get the configuration hash.
+ * @returns {string}
+ */
+Schema.prototype.hash = function() {
+    validateContext(this);
+    return instances.get(this).hash;
+};
 
-    // if type is not specified then use the default
-    if (!config.type) config.type = 'typed';
-
-    // get the controller item
-    const item = Schema.controllers.get(config.type);
-
-    // type is invalid
-    if (!item) {
-        const err = Error('Unknown type: ' + config.type);
-        util.throwWithMeta(err, util.errors.config);
+/**
+ * Validate then normalize a value.
+ * @param {*} value
+ * @returns {*}
+ */
+Schema.prototype.normalize = function(value) {
+    validateContext(this);
+    const normalizeFunctions = instances.get(this).normalizeFunctions;
+    if (typeof value === 'undefined' && this.hasDefault) value = this.default;
+    this.validate(value, '');
+    const length = normalizeFunctions.length;
+    for (let i = 0; i < length; i++) {
+        value = normalizeFunctions[i].call(this, value);
     }
+    return value;
+};
 
-    // return a schema object
-    return new item.Schema(config, Schema);
+/**
+ * Validate a value against the schema and throw an error if encountered.
+ * @param {*} value
+ * @param {string} [prefix='']
+ */
+Schema.prototype.validate = function(value, prefix) {
+    validateContext(this);
+    const str = this.error(value, prefix);
+    if (str) throw Error(str);
+};
+
+
+
+function getNormalizedSchemaConfiguration(obj) {
+    return Object.getOwnPropertyNames(obj)
+        .reduce((prev, key) => {
+            prev[key] = obj[key];
+            return prev;
+        }, {});
 }
 
-function getPassingSchema(schemas, value) {
-    const len = schemas.length;
-    const errors = [];
-    for (let i = 0; i < len; i++) {
-        const err = schemas[i].error(value, '');
-        if (!err) return {
-            passing: true,
-            schema: schemas[i]
-        };
-        errors.push(err);
+function prepareForHash(value) {
+    if (Array.isArray(value)) {
+        return value.map(prepareForHash);
+    } else if (value && typeof value === 'object') {
+        const result = {};
+        const keys = Object.keys(value);
+        keys.sort();
+        keys.forEach(function(key) {
+            result[key] = prepareForHash(value[key]);
+        });
+        return result;
+    } else {
+        switch (typeof value) {
+            case 'function':
+            case 'symbol':
+                return value.toString();
+            default:
+                return value;
+        }
     }
-    return {
-        passing: false,
-        errors: errors
-    };
 }
 
-function getMultiError(errors, prefix) {
-    const message = 'All possible schemas have errors:\n  ' +
-        errors.map(err => err.message).join('\n  ');
-    const err = util.errish((prefix || '') + message, util.errors.multi);
-    err.errors = errors;
-    return err;
+function validateContext(context) {
+    if (!instances.has(context)) throw Error('Invalid context for prototype method.');
 }
-
-function MultiSchema() {}
