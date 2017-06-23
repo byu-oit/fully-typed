@@ -1,6 +1,6 @@
 {
   "name": "fully-typed",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Run time type validation, transformation, and error generator that works out of the box on primitives, objects, arrays, and nested objects. Also extensible for custom types.",
   "main": "index.js",
   "directories": {
