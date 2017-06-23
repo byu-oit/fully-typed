@@ -47,5 +47,5 @@ tags:
   env: prd
   app: fully-typed
   team: gro:AD-Miscellaneous Information Applications
-federation_json_url: https://raw.githubusercontent.com/byu-oit-appdev/fully-typed/master/.repo-meta.yml
+federation_json_url: https://raw.githubusercontent.com/byu-oit/fully-typed/master/.repo-meta.yml
 
