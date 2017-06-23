@@ -1,5 +1,5 @@
-[![Build status](https://img.shields.io/travis/byu-oit-appdev/fully-typed.svg?style=flat)](https://travis-ci.org/byu-oit-appdev/fully-typed)
-[![Coverage Status](https://coveralls.io/repos/github/byu-oit-appdev/fully-typed/badge.svg?branch=master)](https://coveralls.io/github/byu-oit-appdev/fully-typed?branch=master)
+[![Build status](https://img.shields.io/travis/byu-oit/fully-typed.svg?style=flat)](https://travis-ci.org/byu-oit-appdev/fully-typed)
+[![Coverage Status](https://coveralls.io/repos/github/byu-oit/fully-typed/badge.svg?branch=master)](https://coveralls.io/github/byu-oit-appdev/fully-typed?branch=master)
 
 # fully-typed
 

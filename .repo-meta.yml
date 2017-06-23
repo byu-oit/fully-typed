@@ -14,8 +14,8 @@ ddd:
   ubiquitous_language_url: 
   context_map_url: 
 links:
-  system_documentation_url: https://github.com/byu-oit-appdev/fully-typed
-  source_repo_url: https://github.com/byu-oit-appdev/fully-typed
+  system_documentation_url: https://github.com/byu-oit/fully-typed
+  source_repo_url: https://github.com/byu-oit/fully-typed
   swagger_urls:
 microservice: False
 technologies_used:
@@ -23,7 +23,7 @@ technologies_used:
 stages:
   production:
     urls:
-      product_page: https://github.com/byu-oit-appdev/fully-typed
+      product_page: https://github.com/byu-oit/fully-typed
       physical_url: 
       virtual_url: 
     hosting_location: 
