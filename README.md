@@ -5,6 +5,8 @@
 
 Run time type validation, transformation, and error generator that works out of the box on primitives, objects, arrays, and nested objects. Also extensible for custom types.
 
+[Skip to Table of Contents](#table-of-contents)
+
 ### Features
 
 - Create schemas to validate values against.
@@ -182,6 +184,8 @@ All types defined share the following common configuration options:
     });
     ```
 
+*[Back to Table of Contents](#table-of-contents)*
+
 ### Array
 
 An array type will require the input to be an array.
@@ -218,6 +222,8 @@ In addition to the [shared configuration options](#shared-configuration-options)
     schema.error([1, 1]);       // error
     ```
 
+*[Back to Table of Contents](#table-of-contents)*
+
 ### Boolean
 
 An boolean type will accept any value and transform it into a boolean unless the `strict` option is set. Under `strict` this type will only accept a boolean.
@@ -244,6 +250,8 @@ In addition to the [shared configuration options](#shared-configuration-options)
 
     const value = loose.normalize(1);   // value === true
     ```
+
+*[Back to Table of Contents](#table-of-contents)*
     
 ### Date
 
@@ -276,6 +284,8 @@ In addition to the [shared configuration options](#shared-configuration-options)
     schema.error(new Date('2017-02-01'));         // no errors
     schema.error(new Date('2015-01-01'));         // error
     ```
+
+*[Back to Table of Contents](#table-of-contents)*
 
 ### Function
 
@@ -320,6 +330,8 @@ In addition to the [shared configuration options](#shared-configuration-options)
     schema.error(function foo() {});    // no errors
     schema.error(function() {});        // error
     ```
+
+*[Back to Table of Contents](#table-of-contents)*
 
 ### Number
 
@@ -392,6 +404,8 @@ In addition to the [shared configuration options](#shared-configuration-options)
     schema.error(1);        // no errors
     schema.error(2);        // no errors
     ```
+
+*[Back to Table of Contents](#table-of-contents)*
 
 ### Object
 
@@ -551,6 +565,8 @@ In addition to the [shared configuration options](#shared-configuration-options)
     schema.error({});               // error
     ```
 
+*[Back to Table of Contents](#table-of-contents)*
+
 ### One-Of
 
 It is possible to allow multiple variations of schemas. For example, you may want to allow numbers and strings.
@@ -574,6 +590,8 @@ schema.error(1);        // no errors
 schema.error(-1);       // error
 schema.error(true);     // error
 ```
+
+*[Back to Table of Contents](#table-of-contents)*
 
 ### String
 
@@ -619,6 +637,8 @@ In addition to the [shared configuration options](#shared-configuration-options)
     schema.error('1');     // error
     ```
 
+*[Back to Table of Contents](#table-of-contents)*
+
 ### Symbol
 
 A symbol type will require the input to be a symbol.
@@ -626,6 +646,8 @@ A symbol type will require the input to be a symbol.
 Type Aliases: `'symbol'`, `Symbol`
 
 This type inherits the [shared configuration options](#shared-configuration-options) and has no options of its own.
+
+*[Back to Table of Contents](#table-of-contents)*
 
 ## Schema Instance
 
@@ -641,6 +663,8 @@ const schema = Typed({
 ```
 
 Once a schema is created you can [check a value for errors](#error), [normalize a value](#value), or [validate a value](#validate).
+
+*[Back to Table of Contents](#table-of-contents)*
 
 ### error
 
@@ -663,6 +687,8 @@ schema.error(1);        // null
 schema.error('a');      // "Expected a number"
 ```
 
+*[Back to Table of Contents](#table-of-contents)*
+
 ### normalize
 
 [Validate](#validate) a value and if an error is not thrown then begin normalization. Normalization differs for different types, but the essential role is to get the value into a state where you are ready to work with it. For example, booleans are normalized to `true` or `false` from truthy or falsy values respectively.
@@ -681,6 +707,8 @@ const schema = Typed({
 const value1 = schema.normalize(1);      // value1 === true
 const value2 = schema.normalize(null);   // value2 === false
 ```
+
+*[Back to Table of Contents](#table-of-contents)*
 
 ### validate
 
@@ -703,6 +731,8 @@ schema.validate(1);     // no error thrown
 schema.validate('a');   // throws an error
 ```
 
+*[Back to Table of Contents](#table-of-contents)*
+
 ## Plugins
 
 The fully typed library can be extended with new types.
@@ -723,6 +753,8 @@ The fully typed library can be extended with new types.
     ```
 
 4. Now you can create schema's that use that plugin's type and associated configurations.
+
+*[Back to Table of Contents](#table-of-contents)*
 
 ### Write a Plugin
 
@@ -768,6 +800,8 @@ A plugin is created by defining a typed controller. [See the example](#typeddate
     The alias can be any value (primitive or object) but each alias must be unique within the entire system of typed controllers. The dependencies can reference the typed controllers by any alias they are registered with.
     
 7. Register your controller.
+
+*[Back to Table of Contents](#table-of-contents)*
 
 #### TypedDate Controller Example
 
@@ -838,6 +872,8 @@ const FullyTyped = require('fully-typed');
 FullyTyped.controllers.register(TypedDate);
 ```
 
+*[Back to Table of Contents](#table-of-contents)*
+
 ## Controller API
 
 ### Register
@@ -854,6 +890,8 @@ Register a controller with the typed system to enable use of the type. You will 
 Typed.controllers.register ( controller );
 ```
 
+*[Back to Table of Contents](#table-of-contents)*
+
 ### Delete
 
 Delete an existing controller.
@@ -867,6 +905,8 @@ Delete an existing controller.
 ```js
 Typed.controllers.delete ('alias');
 ```
+
+*[Back to Table of Contents](#table-of-contents)*
 
 ### Get
 
@@ -896,6 +936,8 @@ Get an existing controllers data structure.
 const data = Typed.controllers.get ('alias');
 ```
 
+*[Back to Table of Contents](#table-of-contents)*
+
 ### Has
 
 Check to see if a controller has been defined with the specified alias.
@@ -909,6 +951,8 @@ Check to see if a controller has been defined with the specified alias.
 ```js
 Typed.controllers.has ('alias');
 ```
+
+*[Back to Table of Contents](#table-of-contents)*
 
 ### Is
 
@@ -926,6 +970,8 @@ Check to see if two aliases are referencing the same controller.
 Typed.controllers.is ('alias1', 'alias2');
 ```
 
+*[Back to Table of Contents](#table-of-contents)*
+
 ### List
 
 Get an array of all registered type controllers.
@@ -937,3 +983,5 @@ Get an array of all registered type controllers.
 ```js
 Typed.controllers.list ();
 ```
+
+*[Back to Table of Contents](#table-of-contents)*
