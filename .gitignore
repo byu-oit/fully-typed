@@ -106,3 +106,4 @@ fabric.properties
 node_modules
 coverage
 .idea
+.nyc_output
