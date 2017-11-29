@@ -21,9 +21,52 @@ const util              = require('./util');
 module.exports = FullyTyped;
 
 /**
+ * Get a copy of the configuration used to generate the FullyTyped instance.
+ * @type {object}
+ * @name FullyTyped#config
+ */
+
+/**
+ * Check a value against the schema for errors.
+ * @function
+ * @name FullyTyped#error
+ * @param {*} value The value to test.
+ * @param {string} [prefix=''] The prefix to add at the start of any errors.
+ * @returns {string|null}
+ */
+
+/**
+ * Get the hash that represents this fully typed configuration.
+ * @function
+ * @name FullyTyped#hash
+ * @param {*} value The value to test.
+ * @param {string} [prefix=''] The prefix to add at the start of any errors.
+ * @returns {string}
+ */
+
+/**
+ * Normalize a value against the configuration.
+ * @function
+ * @name FullyTyped#normalize
+ * @param {*} value The value to normalize.
+ * @returns {*}
+ */
+
+/**
+ * Validate a value against the schema and throw an error if encountered.
+ * @function
+ * @name FullyTyped#validate
+ * @param {*} value
+ * @param {string} [prefix='']
+ * @throws {Error}
+ */
+
+
+/**
  * Get a typed schema.
+ * @constructor
  * @param {object, object[]} [configuration={}]
- * @returns {Schema}
+ * @returns {FullyTyped}
  */
 function FullyTyped (configuration) {
     if (arguments.length === 0 || configuration === null) configuration = {};
