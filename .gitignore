@@ -105,3 +105,4 @@ fabric.properties
 
 node_modules
 coverage
+.idea
