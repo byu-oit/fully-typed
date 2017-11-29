@@ -56,10 +56,21 @@ function Schema(config, data) {
         .update(JSON.stringify(prepareForHash(options)))
         .digest('hex');
     instances.set(this, protect);
+
+    /**
+     * @name Schema#config
+     * @type {object}
+     */
+    Object.defineProperty(this, 'config', {
+        get: function() {
+            return util.copy(config);
+        }
+    });
 }
 
 /**
  * Check if a value produces any errors.
+ * @name Schema#error
  * @param {*} value
  * @param {string} [prefix='']
  * @returns {string,null}
@@ -78,6 +89,7 @@ Schema.prototype.error = function(value, prefix) {
 
 /**
  * Get the configuration hash.
+ * @name Schema#hash
  * @returns {string}
  */
 Schema.prototype.hash = function() {
@@ -87,6 +99,7 @@ Schema.prototype.hash = function() {
 
 /**
  * Validate then normalize a value.
+ * @name Schema#normalize
  * @param {*} value
  * @returns {*}
  */
@@ -104,6 +117,7 @@ Schema.prototype.normalize = function(value) {
 
 /**
  * Validate a value against the schema and throw an error if encountered.
+ * @name Schema#validate
  * @param {*} value
  * @param {string} [prefix='']
  */
