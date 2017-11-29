@@ -37,6 +37,13 @@ describe('Typed', () => {
         expect(() => Schema('string')).to.throw(Error);
     });
 
+    it('exposes config', () => {
+        const config = { type: 'typed' };
+        const schema = Schema(config);
+        expect(schema.config).not.to.equal(config);
+        expect(schema.config).to.deep.equal(config);
+    });
+
     describe('enum', () => {
 
         it('cannot be a string', () => {
