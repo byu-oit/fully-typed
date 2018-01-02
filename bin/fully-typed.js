@@ -92,6 +92,11 @@ function FullyTyped (configuration) {
     return new Schema(config, data);
 }
 
+/**
+ * @static
+ * @name FullyTyped.controllers
+ * @type {Controllers}
+ */
 FullyTyped.controllers = require('./controllers')();
 
 FullyTyped.OneOf = Symbol('one-of');
