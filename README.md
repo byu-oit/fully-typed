@@ -109,6 +109,7 @@ positiveIntegerSchema.normalize(-1);    // validate will run prior to normalizat
     - [String](#string)
     - [Symbol](#symbol)
 - [Schema Instance](#schema-instance)
+    - [config](#config)
     - [error](#error)
     - [normalize](#normalize)
     - [validate](#validate)
@@ -665,6 +666,19 @@ const schema = Typed({
 Once a schema is created you can [check a value for errors](#error), [normalize a value](#value), or [validate a value](#validate).
 
 *[Back to Table of Contents](#table-of-contents)*
+
+### config
+
+Get a copy of the configuration that was used to define the schema for the current instance.
+
+```js
+const schema = Typed({
+    type: Object,
+    allowNull: false
+})
+
+const config = schema.config; // => { type: Object, allowNull: false }
+```
 
 ### error
 
