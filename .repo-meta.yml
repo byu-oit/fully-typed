@@ -1,4 +1,4 @@
-$schemaver: '2.0'
+$schemaver: 2.1
 repo_url: https://github.com/byu-oit/fully-typed
 software:
   - name: fully-typed
@@ -46,7 +46,4 @@ software:
             virtual_server:
             rack_server:
             blade_server:
-    tags:
-      data-sensitivity: confidential
-      app: fully-typed
-      team: gro:AD-Miscellaneous Information Applications
+    data_sensitivity: confidential
